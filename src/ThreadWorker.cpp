@@ -47,7 +47,7 @@ void ThreadWorker::storeClientConnection(int fd) {
     struct pollfd pfd{};
     pfd.fd = fd;
     pfd.events = POLLIN;
-    addPipe(pfd.fd);
+    fds.push_back(pfd);
 }
 
 void ThreadWorker::handleClientConnection(pollfd &pfd) {
@@ -63,6 +63,7 @@ void ThreadWorker::handleClientConnection(pollfd &pfd) {
 }
 
 void ThreadWorker::addPipe(int writeEnd) {
+
     if (write(addPipeFd[1], &writeEnd, sizeof(writeEnd)) == -1) {
         throw std::runtime_error("Error writing to addPipe");
     }
@@ -106,7 +107,7 @@ void ThreadWorker::handleClientInput(pollfd &pfd) {
 void ThreadWorker::readClientInput(int fd) {
     char buf[CHUNK_SIZE];
     ssize_t bytesRead = recv(fd, buf, CHUNK_SIZE, 0);
-
+    printf("BYTES READ %zu\n", bytesRead);
     if (bytesRead < 0) {
         //throw std::runtime_error("recv input from data");
     }
@@ -120,9 +121,11 @@ void ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     auto uri = clientSocketsURI.at(pfd.fd);
     auto *cacheElement = storage.getElement(uri);
 
-    auto data = cacheElement->readData(pfd.fd);
+
     pthread_mutex_lock(&dataMutex);
     pthread_cond_wait(&dataCond, &dataMutex);
+    auto data = cacheElement->readData(pfd.fd);
+    std::cout << "Data read from client " << pfd.fd << std::endl;
     ssize_t bytesSend = send(pfd.fd, data.data(), data.size(), 0);
     if (bytesSend == -1 && errno == EPIPE) {
         removePipe(pfd.fd);
