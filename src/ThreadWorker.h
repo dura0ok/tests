@@ -12,7 +12,6 @@ public:
     explicit ThreadWorker(Storage &storage);
 
     void addPipe(int writeEnd);
-    void removePipe(int writeEnd);
 
 
 private:
@@ -22,7 +21,6 @@ private:
 
 
     int addPipeFd[2]{};
-    int removePipeFd[2]{};
 
     void worker();
 
@@ -40,7 +38,6 @@ private:
     bool handleClientReceivingResource(pollfd &pfd);
 
     void readClientInput(int fd);
-
 
 
     void handlePipeMessages();

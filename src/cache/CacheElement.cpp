@@ -56,9 +56,9 @@ bool CacheElement::isFinished() const {
 }
 
 void CacheElement::makeReadersReadyToWrite(std::vector<pollfd> &fds) {
-    for (auto & userBufState : userBufStates) {
+    for (auto &userBufState: userBufStates) {
         auto userOffset = static_cast<size_t>(userBufState.second);
-        if (userOffset < data.size()){
+        if (userOffset < data.size()) {
             fds[userBufState.first].events |= POLLOUT;
             pthread_mutex_lock(&dataMutex);
             pthread_cond_broadcast(&dataCond);

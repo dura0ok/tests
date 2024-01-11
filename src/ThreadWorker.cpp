@@ -13,7 +13,7 @@
 
 ThreadWorker::ThreadWorker(Storage &newStorage) : storage(newStorage) {
     thread = std::thread([this]() { ThreadWorker::worker(); });
-    if (pipe2(addPipeFd, O_NONBLOCK) == -1 ) {
+    if (pipe2(addPipeFd, O_NONBLOCK) == -1) {
         throw std::runtime_error("Error creating pipes");
     }
 
@@ -24,14 +24,14 @@ void ThreadWorker::worker() {
     printf("worker is started\n");
     while (true) {
         int pollResult = poll(fds.data(), fds.size(), -1);
-//        std::cout << "Success poll ";
-//        for(auto &el : fds){
-//            std::cout  << el.fd << " " << el.events << " || ";
-//
-//        }
+        std::cout << "Success poll ";
+        for (auto &el: fds) {
+            std::cout << el.fd << " " << el.events << " || ";
+
+        }
 
 
-//        std::cout << std::endl;
+        std::cout << std::endl;
 
         if (pollResult == -1) {
             throw std::runtime_error("poll error");
@@ -42,13 +42,13 @@ void ThreadWorker::worker() {
         for (ssize_t i = 2; i < static_cast<ssize_t>(fds.size()); i++) {
             auto &pfd = fds[i];
             if (serverSocketsURI.count(pfd.fd)) {
-                if(handleReadDataFromServer(pfd)){
+                if (handleReadDataFromServer(pfd)) {
                     eraseFDByIndex(i);
                 }
                 continue;
             }
 
-            if(handleClientConnection(pfd)){
+            if (handleClientConnection(pfd)) {
                 eraseFDByIndex(i);
             }
         }
@@ -110,7 +110,7 @@ bool ThreadWorker::handleClientInput(pollfd &pfd) {
     }
 
 
-    //pfd.events = POLLOUT;
+    pfd.events = POLLOUT;
     auto *cacheElement = storage.getElement(req.uri);
     cacheElement->initReader(pfd.fd);
     clientBuf.clear();
@@ -135,7 +135,6 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     auto *cacheElement = storage.getElement(uri);
 
 
-
     auto data = cacheElement->readData(pfd.fd);
     std::cout << "Data read from client " << pfd.fd << std::endl;
     ssize_t bytesSend = send(pfd.fd, data.data(), data.size(), 0);
@@ -143,7 +142,7 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
         return true;
     }
 
-    if(data.empty()){
+    if (data.empty()) {
         printf("EMPTY DATA in receive\n");
         pfd.events &= ~POLLOUT;
     }
