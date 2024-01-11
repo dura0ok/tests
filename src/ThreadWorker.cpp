@@ -148,7 +148,7 @@ void ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
 
     if (cacheElement->isFinishReading(pfd.fd)) {
         printf("FINISH READING\n");
-        removePipe(pfd.fd);
+
         return;
     }
 
@@ -183,9 +183,10 @@ void ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
 
     char buf[CHUNK_SIZE] = {'\0'};
     ssize_t bytesRead = recv(pfd.fd, buf, CHUNK_SIZE, 0);
+    cacheElement->makeReadersReadyToWrite(fds);
     cacheElement->appendData(std::string(buf, bytesRead));
 
-    cacheElement->makeReadersReadyToWrite(fds);
+
 
     if (!HttpParser::isStatusCodeReceived(bufToReceiveStatusCode)) {
         bufToReceiveStatusCode += std::string(buf, bytesRead);
@@ -194,6 +195,8 @@ void ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
     if (bytesRead == 0) {
         printf("MARK IS FINISHED\n");
         cacheElement->markFinished();
+        removePipe(pfd.fd);
+        close(pfd.fd);
         return;
     }
 
