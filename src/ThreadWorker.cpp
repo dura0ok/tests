@@ -23,14 +23,15 @@ ThreadWorker::ThreadWorker(Storage &newStorage) : storage(newStorage) {
 void ThreadWorker::worker() {
     printf("worker is started\n");
     while (true) {
-        std::cout << "Success poll ";
-        for(auto &el : fds){
-            std::cout  << el.fd << " " << el.events << " || ";
-
-        }
         int pollResult = poll(fds.data(), fds.size(), -1);
+//        std::cout << "Success poll ";
+//        for(auto &el : fds){
+//            std::cout  << el.fd << " " << el.events << " || ";
+//
+//        }
 
-        std::cout << std::endl;
+
+//        std::cout << std::endl;
 
         if (pollResult == -1) {
             throw std::runtime_error("poll error");
@@ -106,7 +107,6 @@ bool ThreadWorker::handleClientInput(pollfd &pfd) {
         printf("add server socket %d\n", serverFD);
         storeClientConnection(serverFD);
         serverSocketsURI.insert(std::make_pair(serverFD, req.uri));
-        clientBuffersMap.insert(std::pair(serverFD, std::string()));
     }
 
 
@@ -155,23 +155,6 @@ bool ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
     printf("SERVER DOWNLOAD\n");
     auto uri = serverSocketsURI.at(pfd.fd);
     auto *cacheElement = storage.getElement(uri);
-    auto &bufToReceiveStatusCode = clientBuffersMap.at(pfd.fd);
-
-    if (cacheElement->isFinished()) {
-
-        auto code = HttpParser::parseStatusCode(bufToReceiveStatusCode);
-
-        if (code < 0) {
-            printf("WHY YOU DO THIS ?\n");
-            return false;
-        }
-
-        size_t readersCount = cacheElement->getReadersCount();
-        printf("CACHE ELEMENT IS FINISHED %d %zu\n", code, readersCount);
-
-        //bufToReceiveStatusCode.clear();
-        return true;
-    }
 
     char buf[CHUNK_SIZE] = {'\0'};
     ssize_t bytesRead = recv(pfd.fd, buf, CHUNK_SIZE, 0);
@@ -179,14 +162,10 @@ bool ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
     cacheElement->appendData(std::string(buf, bytesRead));
 
 
-
-    if (!HttpParser::isStatusCodeReceived(bufToReceiveStatusCode)) {
-        bufToReceiveStatusCode += std::string(buf, bytesRead);
-    }
-
     if (bytesRead == 0) {
         printf("MARK IS FINISHED\n");
         cacheElement->markFinished();
+
         close(pfd.fd);
         return true;
     }
