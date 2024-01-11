@@ -50,6 +50,13 @@ void ThreadWorker::storeClientConnection(int fd) {
     fds.push_back(pfd);
 }
 
+void ThreadWorker::removeClientConnection(int fd) {
+    fds.erase(std::remove_if(fds.begin(), fds.end(),
+                                     [fd](const pollfd& p) {
+                                         return p.fd == fd;
+                                     }), fds.end());
+}
+
 void ThreadWorker::handleClientConnection(pollfd &pfd) {
     if (pfd.revents & POLLIN) {
         handleClientInput(pfd);
@@ -198,7 +205,7 @@ void ThreadWorker::handlePipeMessages() {
 
     if (fds[1].revents & POLLIN) {
         while (read(removePipeFd[0], &fd, sizeof(fd)) != -1) {
-            removePipe(fd);
+            removeClientConnection(fd);
         }
     }
 }

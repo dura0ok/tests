@@ -48,4 +48,6 @@ private:
     void applyPendingChanges();
 
     void storeClientConnection(int fd);
+
+    void removeClientConnection(int fd);
 };
