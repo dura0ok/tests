@@ -18,7 +18,6 @@ ThreadWorker::ThreadWorker(Storage &newStorage) : storage(newStorage) {
     }
 
     fds.push_back({addPipeFd[0], POLLIN, 0});
-    fds.push_back({removePipeFd[0], POLLIN, 0});
 }
 
 void ThreadWorker::worker() {
@@ -83,12 +82,6 @@ void ThreadWorker::addPipe(int writeEnd) {
     }
 }
 
-void ThreadWorker::removePipe(int writeEnd) {
-    if (write(removePipeFd[1], &writeEnd, sizeof(writeEnd)) == -1) {
-        throw std::runtime_error("Error writing to removePipe");
-    }
-}
-
 
 void ThreadWorker::handleClientInput(pollfd &pfd) {
 
@@ -143,7 +136,7 @@ void ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     std::cout << "Data read from client " << pfd.fd << std::endl;
     ssize_t bytesSend = send(pfd.fd, data.data(), data.size(), 0);
     if (bytesSend == -1 && errno == EPIPE) {
-        removePipe(pfd.fd);
+        removeClientConnection(pfd.fd);
     }
 
     if (cacheElement->isFinishReading(pfd.fd)) {
@@ -195,7 +188,7 @@ void ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
     if (bytesRead == 0) {
         printf("MARK IS FINISHED\n");
         cacheElement->markFinished();
-        removePipe(pfd.fd);
+        removeClientConnection(pfd.fd);
         close(pfd.fd);
         return;
     }
