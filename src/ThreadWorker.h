@@ -11,9 +11,9 @@ class ThreadWorker {
 public:
     explicit ThreadWorker(Storage &storage);
 
-    void storeClientConnection(int fd);
-
+    void addPipe(int writeEnd);
     void removePipe(int writeEnd);
+
 
 private:
     std::vector<pollfd> fds;
@@ -43,9 +43,11 @@ private:
 
     void readClientInput(int fd);
 
-    void addPipe(int writeEnd);
+
 
     void handlePipeMessages();
 
     void applyPendingChanges();
+
+    void storeClientConnection(int fd);
 };
