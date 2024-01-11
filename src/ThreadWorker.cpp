@@ -42,16 +42,22 @@ void ThreadWorker::worker() {
             auto &pfd = fds[i];
             if (serverSocketsURI.count(pfd.fd)) {
                 if(handleReadDataFromServer(pfd)){
-                    fds.erase(fds.begin() + i);
+                    eraseFDByIndex(i);
                 }
                 continue;
             }
 
             if(handleClientConnection(pfd)){
-                fds.erase(fds.begin() + i);
+                eraseFDByIndex(i);
             }
         }
     }
+}
+
+ssize_t ThreadWorker::eraseFDByIndex(ssize_t &i) {
+    fds.erase(fds.begin() + i);
+    --i;
+    return i;
 }
 
 void ThreadWorker::storeClientConnection(int fd) {

@@ -50,4 +50,6 @@ private:
     void storeClientConnection(int fd);
 
     void removeClientConnection(int fd);
+
+    ssize_t eraseFDByIndex(ssize_t &i);
 };
