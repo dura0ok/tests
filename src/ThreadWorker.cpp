@@ -121,15 +121,13 @@ void ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     auto *cacheElement = storage.getElement(uri);
 
 
-    pthread_mutex_lock(&dataMutex);
-    pthread_cond_wait(&dataCond, &dataMutex);
+
     auto data = cacheElement->readData(pfd.fd);
     std::cout << "Data read from client " << pfd.fd << std::endl;
     ssize_t bytesSend = send(pfd.fd, data.data(), data.size(), 0);
     if (bytesSend == -1 && errno == EPIPE) {
         removePipe(pfd.fd);
     }
-    pthread_mutex_unlock(&dataMutex);
 
     if (cacheElement->isFinishReading(pfd.fd)) {
         printf("FINISH READING\n");
@@ -173,18 +171,16 @@ void ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
 
     char buf[CHUNK_SIZE] = {'\0'};
     ssize_t bytesRead = recv(pfd.fd, buf, CHUNK_SIZE, 0);
-    pthread_mutex_lock(&dataMutex);
     cacheElement->appendData(std::string(buf, bytesRead));
+
+    cacheElement->makeReadersReadyToWrite(fds);
 
     if (!HttpParser::isStatusCodeReceived(bufToReceiveStatusCode)) {
         bufToReceiveStatusCode += std::string(buf, bytesRead);
     }
 
-    cacheElement->makeReadersReadyToWrite(fds);
-    pthread_cond_broadcast(&dataCond);
-    pthread_mutex_unlock(&dataMutex);
-
     if (bytesRead == 0) {
+        printf("MARK IS FINISHED\n");
         cacheElement->markFinished();
         return;
     }

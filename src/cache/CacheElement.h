@@ -46,4 +46,8 @@ private:
     std::string data;
     bool finished{};
 
+    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+    pthread_mutex_t dataMutex = PTHREAD_MUTEX_INITIALIZER;
+    pthread_cond_t dataCond = PTHREAD_COND_INITIALIZER;
+
 };
