@@ -92,8 +92,9 @@ void ThreadWorker::handleClientInput(pollfd &pfd) {
         storage.initElement(req.uri);
         auto serverFD = HostConnector::connectToTargetHost(req);
         printf("add server socket %d\n", serverFD);
-        addPipe(serverFD);
+        storeClientConnection(serverFD);
         serverSocketsURI.insert(std::make_pair(serverFD, req.uri));
+        clientBuffersMap.insert(std::pair(serverFD, std::string()));
     }
 
 
