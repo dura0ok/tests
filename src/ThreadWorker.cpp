@@ -24,7 +24,15 @@ ThreadWorker::ThreadWorker(Storage &newStorage) : storage(newStorage) {
 void ThreadWorker::worker() {
     printf("worker is started\n");
     while (true) {
+        std::cout << "Success poll ";
+        for(auto &el : fds){
+            std::cout  << el.fd << " " << el.events << " || ";
+
+        }
         int pollResult = poll(fds.data(), fds.size(), -1);
+
+        std::cout << std::endl;
+
         if (pollResult == -1) {
             throw std::runtime_error("poll error");
         }
@@ -83,7 +91,8 @@ void ThreadWorker::removePipe(int writeEnd) {
 
 
 void ThreadWorker::handleClientInput(pollfd &pfd) {
-    //printf("ASD\n");
+
+    printf("RECEIVE CLIENT INPUT FUNC()\n");
     readClientInput(pfd.fd);
 
     auto &clientBuf = clientBuffersMap[pfd.fd];
@@ -105,7 +114,7 @@ void ThreadWorker::handleClientInput(pollfd &pfd) {
     }
 
 
-    pfd.events = POLLOUT;
+    //pfd.events = POLLOUT;
     auto *cacheElement = storage.getElement(req.uri);
     cacheElement->initReader(pfd.fd);
     clientBuf.clear();
@@ -124,6 +133,7 @@ void ThreadWorker::readClientInput(int fd) {
 }
 
 void ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
+    printf("RECEIVE CLIENT FUNC()\n");
     auto uri = clientSocketsURI.at(pfd.fd);
     auto *cacheElement = storage.getElement(uri);
 
@@ -165,14 +175,9 @@ void ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
 
         size_t readersCount = cacheElement->getReadersCount();
         printf("CACHE ELEMENT IS FINISHED %d %zu\n", code, readersCount);
-        if (readersCount == 0) {
-            removePipe(pfd.fd);
-            if(code != 200){
-                storage.clearElement(uri);
-            }
-        }
 
-        bufToReceiveStatusCode.clear();
+        //bufToReceiveStatusCode.clear();
+        removeClientConnection(pfd.fd);
         return;
     }
 
