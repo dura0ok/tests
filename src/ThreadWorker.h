@@ -30,14 +30,14 @@ private:
     std::map<int, std::string> clientSocketsURI;
     std::map<int, std::string> clientBuffersMap;
 
-    void handleClientConnection(pollfd &pfd);
+    bool handleClientConnection(pollfd &pfd);
 
-    void handleReadDataFromServer(pollfd &pfd);
+    bool handleReadDataFromServer(pollfd &pfd);
 
 
-    void handleClientInput(pollfd &pfd);
+    bool handleClientInput(pollfd &pfd);
 
-    void handleClientReceivingResource(pollfd &pfd);
+    bool handleClientReceivingResource(pollfd &pfd);
 
     void readClientInput(int fd);
 

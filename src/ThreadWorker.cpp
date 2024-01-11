@@ -13,7 +13,7 @@
 
 ThreadWorker::ThreadWorker(Storage &newStorage) : storage(newStorage) {
     thread = std::thread([this]() { ThreadWorker::worker(); });
-    if (pipe2(addPipeFd, O_NONBLOCK) == -1 || pipe2(removePipeFd, O_NONBLOCK) == -1) {
+    if (pipe2(addPipeFd, O_NONBLOCK) == -1 ) {
         throw std::runtime_error("Error creating pipes");
     }
 
@@ -38,14 +38,18 @@ void ThreadWorker::worker() {
 
         handlePipeMessages();
 
-        for (size_t i = 2; i < fds.size(); i++) {
+        for (ssize_t i = 2; i < static_cast<ssize_t>(fds.size()); i++) {
             auto &pfd = fds[i];
             if (serverSocketsURI.count(pfd.fd)) {
-                handleReadDataFromServer(pfd);
+                if(handleReadDataFromServer(pfd)){
+                    fds.erase(fds.begin() + i);
+                }
                 continue;
             }
 
-            handleClientConnection(pfd);
+            if(handleClientConnection(pfd)){
+                fds.erase(fds.begin() + i);
+            }
         }
     }
 }
@@ -57,23 +61,16 @@ void ThreadWorker::storeClientConnection(int fd) {
     fds.push_back(pfd);
 }
 
-void ThreadWorker::removeClientConnection(int fd) {
-    fds.erase(std::remove_if(fds.begin(), fds.end(),
-                                     [fd](const pollfd& p) {
-                                         return p.fd == fd;
-                                     }), fds.end());
-}
 
-void ThreadWorker::handleClientConnection(pollfd &pfd) {
+bool ThreadWorker::handleClientConnection(pollfd &pfd) {
     if (pfd.revents & POLLIN) {
-        handleClientInput(pfd);
-        return;
+        return handleClientInput(pfd);
     }
 
     if (pfd.revents & POLLOUT) {
-        handleClientReceivingResource(pfd);
-        return;
+        return handleClientReceivingResource(pfd);
     }
+    return false;
 }
 
 void ThreadWorker::addPipe(int writeEnd) {
@@ -83,14 +80,14 @@ void ThreadWorker::addPipe(int writeEnd) {
 }
 
 
-void ThreadWorker::handleClientInput(pollfd &pfd) {
+bool ThreadWorker::handleClientInput(pollfd &pfd) {
 
     printf("RECEIVE CLIENT INPUT FUNC()\n");
     readClientInput(pfd.fd);
 
     auto &clientBuf = clientBuffersMap[pfd.fd];
     if (!HttpParser::isHttpRequestComplete(clientBuf)) {
-        return;
+        return false;
     }
 
     auto req = HttpParser::parseRequest(clientBuf);
@@ -111,6 +108,7 @@ void ThreadWorker::handleClientInput(pollfd &pfd) {
     auto *cacheElement = storage.getElement(req.uri);
     cacheElement->initReader(pfd.fd);
     clientBuf.clear();
+    return false;
 }
 
 void ThreadWorker::readClientInput(int fd) {
@@ -125,7 +123,7 @@ void ThreadWorker::readClientInput(int fd) {
     clientBuf += std::string(buf, bytesRead);
 }
 
-void ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
+bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     printf("RECEIVE CLIENT FUNC()\n");
     auto uri = clientSocketsURI.at(pfd.fd);
     auto *cacheElement = storage.getElement(uri);
@@ -136,22 +134,18 @@ void ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     std::cout << "Data read from client " << pfd.fd << std::endl;
     ssize_t bytesSend = send(pfd.fd, data.data(), data.size(), 0);
     if (bytesSend == -1 && errno == EPIPE) {
-        removeClientConnection(pfd.fd);
-    }
-
-    if (cacheElement->isFinishReading(pfd.fd)) {
-        printf("FINISH READING\n");
-
-        return;
+        return true;
     }
 
     if(data.empty()){
         printf("EMPTY DATA in receive\n");
         pfd.events &= ~POLLOUT;
     }
+
+    return false;
 }
 
-void ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
+bool ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
     printf("SERVER DOWNLOAD\n");
     auto uri = serverSocketsURI.at(pfd.fd);
     auto *cacheElement = storage.getElement(uri);
@@ -163,15 +157,14 @@ void ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
 
         if (code < 0) {
             printf("WHY YOU DO THIS ?\n");
-            return;
+            return false;
         }
 
         size_t readersCount = cacheElement->getReadersCount();
         printf("CACHE ELEMENT IS FINISHED %d %zu\n", code, readersCount);
 
         //bufToReceiveStatusCode.clear();
-        removeClientConnection(pfd.fd);
-        return;
+        return true;
     }
 
     char buf[CHUNK_SIZE] = {'\0'};
@@ -188,12 +181,12 @@ void ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
     if (bytesRead == 0) {
         printf("MARK IS FINISHED\n");
         cacheElement->markFinished();
-        removeClientConnection(pfd.fd);
         close(pfd.fd);
-        return;
+        return true;
     }
 
     printf("Bytes read %zd\n", bytesRead);
+    return false;
 }
 
 void ThreadWorker::handlePipeMessages() {
@@ -201,12 +194,6 @@ void ThreadWorker::handlePipeMessages() {
     if (fds[0].revents & POLLIN) {
         while (read(addPipeFd[0], &fd, sizeof(fd)) != -1) {
             storeClientConnection(fd);
-        }
-    }
-
-    if (fds[1].revents & POLLIN) {
-        while (read(removePipeFd[0], &fd, sizeof(fd)) != -1) {
-            removeClientConnection(fd);
         }
     }
 }
