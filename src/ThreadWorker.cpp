@@ -39,7 +39,7 @@ void ThreadWorker::worker() {
 
         handlePipeMessages();
 
-        for (ssize_t i = 2; i < static_cast<ssize_t>(fds.size()); i++) {
+        for (ssize_t i = 1; i < static_cast<ssize_t>(fds.size()); i++) {
             auto &pfd = fds[i];
             if (serverSocketsURI.count(pfd.fd)) {
                 if (handleReadDataFromServer(pfd)) {
@@ -139,6 +139,7 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     std::cout << "Data read from client " << pfd.fd << std::endl;
     ssize_t bytesSend = send(pfd.fd, data.data(), data.size(), 0);
     if (bytesSend == -1 && errno == EPIPE) {
+        cacheElement->clearReader(pfd.fd);
         return true;
     }
 
