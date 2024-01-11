@@ -13,8 +13,6 @@ public:
 
     void storeClientConnection(int fd);
 
-    void addPipe(int writeEnd);
-
     void removePipe(int writeEnd);
 
 private:
@@ -44,6 +42,8 @@ private:
     void handleClientReceivingResource(pollfd &pfd);
 
     void readClientInput(int fd);
+
+    void addPipe(int writeEnd);
 
     void handlePipeMessages();
 

@@ -63,7 +63,6 @@ void ThreadWorker::handleClientConnection(pollfd &pfd) {
 }
 
 void ThreadWorker::addPipe(int writeEnd) {
-
     if (write(addPipeFd[1], &writeEnd, sizeof(writeEnd)) == -1) {
         throw std::runtime_error("Error writing to addPipe");
     }
@@ -107,7 +106,6 @@ void ThreadWorker::handleClientInput(pollfd &pfd) {
 void ThreadWorker::readClientInput(int fd) {
     char buf[CHUNK_SIZE];
     ssize_t bytesRead = recv(fd, buf, CHUNK_SIZE, 0);
-    printf("BYTES READ %zu\n", bytesRead);
     if (bytesRead < 0) {
         //throw std::runtime_error("recv input from data");
     }
@@ -145,6 +143,7 @@ void ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
 }
 
 void ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
+    printf("SERVER DOWNLOAD\n");
     auto uri = serverSocketsURI.at(pfd.fd);
     auto *cacheElement = storage.getElement(uri);
     auto &bufToReceiveStatusCode = clientBuffersMap.at(pfd.fd);
@@ -189,7 +188,7 @@ void ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
         return;
     }
 
-    //printf("Bytes read %zd\n", bytesRead);
+    printf("Bytes read %zd\n", bytesRead);
 }
 
 void ThreadWorker::handlePipeMessages() {

@@ -11,7 +11,7 @@ ThreadPool::ThreadPool(size_t size) : pool_size(size) {
 void ThreadPool::AddFDToWorker(int fd) {
     std::cout << "Add fd " << fd << std::endl;
     auto worker = workers[current_thread].get();
-    worker->addPipe(fd);
+    worker->storeClientConnection(fd);
     current_thread++;
     current_thread = current_thread % pool_size;
 }
