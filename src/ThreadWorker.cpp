@@ -151,24 +151,23 @@ void ThreadWorker::readClientInput(int fd) {
 
 bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     printf("RECEIVE CLIENT FUNC()\n");
-    auto info = clientInfo.at(pfd.fd);
+    auto &info = clientInfo.at(pfd.fd);
     auto *cacheElement = storage.getElement(info.uri);
 
     std::string data = cacheElement->readData(info.offset);
 
-    if (data.empty()) {
-        printf("EMPTY DATA in receive\n");
-        pfd.events &= ~POLLOUT;
-    }
+    assert(!data.empty());
 
     std::cout << "Data read from client " << pfd.fd << std::endl;
     ssize_t bytesSend = send(pfd.fd, data.data(), data.size(), 0);
-    if (bytesSend == -1 && errno == EPIPE) {
-        cacheElement->clearReader(pfd.fd);
+
+    if(cacheElement->isFinishReading(info.offset) || (bytesSend == -1 && errno == EPIPE)){
+        close(pfd.fd);
+        clientInfo.erase(pfd.fd);
         return true;
     }
 
-
+    info.offset += static_cast<ssize_t>(data.size());
 
     return false;
 }
