@@ -155,6 +155,12 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     auto *cacheElement = storage.getElement(info.uri);
 
     std::string data = cacheElement->readData(pfd.fd, info.offset);
+
+    if (data.empty()) {
+        printf("EMPTY DATA in receive\n");
+        pfd.events &= ~POLLOUT;
+    }
+
     std::cout << "Data read from client " << pfd.fd << std::endl;
     ssize_t bytesSend = send(pfd.fd, data.data(), data.size(), 0);
     if (bytesSend == -1 && errno == EPIPE) {
@@ -162,10 +168,7 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
         return true;
     }
 
-    if (data.empty()) {
-        printf("EMPTY DATA in receive\n");
-        pfd.events &= ~POLLOUT;
-    }
+
 
     return false;
 }

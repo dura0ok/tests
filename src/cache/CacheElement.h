@@ -20,15 +20,15 @@ public:
     }
 
 
-    bool isFinishReading(int sock_fd);
+    bool isFinishReading(ssize_t offset);
 
     void markFinished();
 
     bool isFinished() const;
 
-    void initReader(int sock_fd);
+    void initReader(int sock_fd, ssize_t offset);
 
-    std::string readData(int sock_fd, ssize_t i);
+    std::string readData(ssize_t offset);
 
     void appendData(const std::string &new_data);
 
