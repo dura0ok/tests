@@ -27,13 +27,12 @@ void CacheElement::initReader(int sock_fd, ssize_t offset) {
 
 std::string CacheElement::readData(ssize_t offset) {
     pthread_rwlock_rdlock(&rwlock);
-    pthread_mutex_unlock(&dataMutex);
     auto res = data.substr(offset, CHUNK_SIZE);
-    offset += static_cast<long>(res.size());
     pthread_rwlock_unlock(&rwlock);
+
     pthread_mutex_lock(&dataMutex);
     pthread_cond_wait(&dataCond, &dataMutex);
-
+    pthread_mutex_unlock(dataMutex);
     return res;
 }
 
