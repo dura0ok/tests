@@ -10,25 +10,27 @@ bool CacheElement::isFinishReading(ssize_t offset) {
 }
 
 void CacheElement::markFinished() {
+    pthread_rwlock_rdlock(&readerLock);
     finished = true;
+    pthread_rwlock_unlock(&readerLock);
 }
 
 void CacheElement::clearReader(int sock_fd) {
-    pthread_rwlock_wrlock(&readerLock);
+    pthread_rwlock_wrlock(&rwlock);
     userBufStates.erase(sock_fd);
-    pthread_rwlock_unlock(&readerLock);
+    pthread_rwlock_unlock(&rwlock);
 }
 
 void CacheElement::initReader(int sock_fd, ssize_t offset) {
-    pthread_rwlock_wrlock(&readerLock);
+    pthread_rwlock_wrlock(&rwlock);
     userBufStates.insert(std::make_pair(sock_fd, offset));
-    pthread_rwlock_unlock(&readerLock);
+    pthread_rwlock_unlock(&rwlock);
 }
 
 std::string CacheElement::readData(ssize_t offset) {
-    pthread_rwlock_rdlock(&rwlock);
+    pthread_rwlock_rdlock(&readerLock);
     auto res = data.substr(offset, CHUNK_SIZE);
-    pthread_rwlock_unlock(&rwlock);
+    pthread_rwlock_unlock(&readerLock);
     return res;
 }
 
