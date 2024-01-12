@@ -60,7 +60,7 @@ void CacheElement::makeReadersReadyToWrite(const std::string &uri) {
     for (auto &userBufState: userBufStates) {
         info.fd = userBufState.first;
         info.offset = userBufState.second;
-        pool.
+        pool->AddClientInfoToWorker(info);
 //        auto userOffset = static_cast<size_t>(userBufState.second);
 //        if (userOffset < data.size()) {
 //            fds[userBufState.first].events |= POLLOUT;

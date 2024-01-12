@@ -18,7 +18,7 @@ public:
     explicit ThreadWorker(Storage &storage);
 
     void addPipe(int writeEnd);
-
+    void transferInfo(ClientInfo &info);
 
 private:
     std::vector<pollfd> fds;
@@ -53,7 +53,7 @@ private:
 
     ssize_t eraseFDByIndex(ssize_t &i);
 
-    void transferInfo(ClientInfo info);
+
 
     void storeInfo(ClientInfo& info);
 };

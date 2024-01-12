@@ -86,7 +86,7 @@ void ThreadWorker::addPipe(int writeEnd) {
     }
 }
 
-void ThreadWorker::transferInfo(ClientInfo info) {
+void ThreadWorker::transferInfo(ClientInfo &info) {
     if (write(transferPipeFd[1], &info, sizeof(info)) == -1) {
         throw std::runtime_error("Error writing to addPipe");
     }
@@ -185,7 +185,7 @@ bool ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
     ssize_t bytesRead = recv(pfd.fd, buf, CHUNK_SIZE, 0);
 
     cacheElement->appendData(std::string(buf, bytesRead));
-    cacheElement->makeReadersReadyToWrite(fds);
+    cacheElement->makeReadersReadyToWrite(uri);
 
     if (bytesRead == 0) {
         printf("MARK IS FINISHED\n");

@@ -14,14 +14,16 @@ public:
     explicit ThreadPool(size_t pool_size);
 
     void AddFDToWorker(int fd);
-
+    void AddClientInfoToWorker(ClientInfo &info);
 private:
-    void incrementCurrentThread();
+    size_t incrementCurrentThread();
 
     std::vector<std::unique_ptr<ThreadWorker>> workers;
     std::atomic_size_t current_thread = 0;
     size_t pool_size = 0;
     Storage cacheStorage;
+
+
 };
 
 extern ThreadPool* pool;
