@@ -12,6 +12,14 @@ void ThreadPool::AddFDToWorker(int fd) {
     std::cout << "Add fd " << fd << std::endl;
     auto worker = workers[current_thread].get();
     worker->addPipe(fd);
-    current_thread++;
-    current_thread = current_thread % pool_size;
+    incrementCurrentThread();
+}
+
+void ThreadPool::incrementCurrentThread() {
+    size_t localCurrentThread;
+    size_t newCurrentThread;
+    do {
+        localCurrentThread =   current_thread.load(std::memory_order_relaxed);
+        newCurrentThread = ( localCurrentThread + 1 ) % pool_size;
+    }while (current_thread.compare_exchange_strong(localCurrentThread, newCurrentThread));
 }

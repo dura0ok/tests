@@ -25,6 +25,8 @@ int parseThreadPoolSize(const char *threadpoolArg) {
     }
 }
 
+ThreadPool* pool;
+
 int main(int argc, char **argv) {
     if (argc != 2) {
         std::cerr << "Pass threadpool size" << std::endl;
@@ -35,6 +37,7 @@ int main(int argc, char **argv) {
 
     int threadPoolSize = parseThreadPoolSize(argv[1]);
     auto threadPool = ThreadPool(threadPoolSize);
+    pool = &threadPool;
     auto proxy = Proxy(8080);
     proxy.handleConnections(threadPool);
 }

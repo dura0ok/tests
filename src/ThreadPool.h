@@ -7,6 +7,7 @@
 #include <memory>
 #include "ThreadWorker.h"
 #include "cache/Storage.h"
+#include <atomic>
 
 class ThreadPool {
 public:
@@ -15,8 +16,12 @@ public:
     void AddFDToWorker(int fd);
 
 private:
+    void incrementCurrentThread();
+
     std::vector<std::unique_ptr<ThreadWorker>> workers;
-    size_t current_thread = 0;
+    std::atomic_size_t current_thread = 0;
     size_t pool_size = 0;
     Storage cacheStorage;
 };
+
+extern ThreadPool* pool;
