@@ -110,11 +110,13 @@ bool ThreadWorker::handleClientInput(pollfd &pfd) {
     }
 
 
-    pfd.events = POLLOUT;
+
+    int clientFD = pfd.fd;
+    pfd.fd = -1;
     auto *cacheElement = storage.getElement(req.uri);
-    cacheElement->initReader(pfd.fd);
+    cacheElement->initReader(clientFD);
     clientBuf.clear();
-    return false;
+    return true;
 }
 
 void ThreadWorker::readClientInput(int fd) {
