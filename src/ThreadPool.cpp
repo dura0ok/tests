@@ -10,10 +10,10 @@ ThreadPool::ThreadPool(size_t size) : pool_size(size) {
 }
 
 void ThreadPool::AddFDToWorker(int fd) {
-    std::cout << "Add fd " << fd << std::endl;
     auto res = incrementCurrentThread();
     auto worker = workers[res].get();
     worker->addPipe(fd);
+    std::cout << "Add fd " << fd << std::endl;
 }
 
 void ThreadPool::AddClientInfoToWorker(ClientInfo &info) {
@@ -28,7 +28,7 @@ size_t ThreadPool::incrementCurrentThread() {
     localCurrentThread = current_thread.load(std::memory_order_relaxed);
     do {
         newCurrentThread = ( localCurrentThread + 1 ) % pool_size;
-    }while (current_thread.compare_exchange_strong(localCurrentThread, newCurrentThread,
+    }while (!current_thread.compare_exchange_strong(localCurrentThread, newCurrentThread,
                                                    std::memory_order_relaxed, std::memory_order_relaxed));
     return localCurrentThread;
 }
