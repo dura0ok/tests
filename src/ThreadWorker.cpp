@@ -31,7 +31,6 @@ void ThreadWorker::worker() {
 
         }
 
-
         std::cout << std::endl;
 
         if (pollResult == -1) {
@@ -93,9 +92,12 @@ void ThreadWorker::transferInfo(ClientInfo info) {
     }
 }
 
-void ThreadWorker::storeInfo(const ClientInfo& info) {
+void ThreadWorker::storeInfo(ClientInfo& info) {
     storeClientConnection(info.fd, POLLOUT);
-
+    ClientLocalInfo localInfo;
+    localInfo.uri = std::move(info.uri);
+    localInfo.offset = info.offset;
+    clientInfo.insert(std::make_pair(info.fd, localInfo));
 }
 
 
@@ -113,7 +115,7 @@ bool ThreadWorker::handleClientInput(pollfd &pfd) {
     ClientLocalInfo localInfo;
     localInfo.offset = 0;
     localInfo.uri = std::string();
-    clientSocketsURI.insert(std::make_pair(pfd.fd, localInfo));
+    clientInfo.insert(std::make_pair(pfd.fd, localInfo));
     clientBuffersMap.erase(pfd.fd);
 
     if (!storage.containsKey(req.uri)) {
@@ -127,7 +129,7 @@ bool ThreadWorker::handleClientInput(pollfd &pfd) {
         printf("add server socket %d\n", serverFD);
         storeClientConnection(serverFD);
         serverSocketsURI.insert(std::make_pair(serverFD, req.uri));
-        clientSocketsURI.erase(clientFD);
+        clientInfo.erase(clientFD);
         return true;
     }
 
@@ -149,7 +151,7 @@ void ThreadWorker::readClientInput(int fd) {
 
 bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     printf("RECEIVE CLIENT FUNC()\n");
-    auto info = clientSocketsURI.at(pfd.fd);
+    auto info = clientInfo.at(pfd.fd);
     auto *cacheElement = storage.getElement(info.uri);
 
 

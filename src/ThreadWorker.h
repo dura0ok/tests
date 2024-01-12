@@ -32,7 +32,7 @@ private:
     void worker();
 
     std::map<int, std::string> serverSocketsURI;
-    std::map<int, ClientLocalInfo> clientSocketsURI;
+    std::map<int, ClientLocalInfo> clientInfo;
     std::map<int, std::string> clientBuffersMap;
 
     bool handleClientConnection(pollfd &pfd);
@@ -55,5 +55,5 @@ private:
 
     void transferInfo(ClientInfo info);
 
-    void storeInfo(const ClientInfo& info);
+    void storeInfo(ClientInfo& info);
 };
