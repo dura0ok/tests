@@ -7,6 +7,7 @@
 #include <sys/poll.h>
 #include <shared_mutex>
 #include "../ClientInfo.h"
+#include <atomic>
 
 class CacheElement {
 public:
@@ -42,5 +43,6 @@ private:
     pthread_rwlock_t mData{};
     pthread_rwlock_t mUserBufStates{};
     std::string data;
+    size_t readersCount;
     bool finished{};
 };
