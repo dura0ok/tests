@@ -44,9 +44,11 @@ private:
 
     void handlePipeMessages();
 
-    void storeClientConnection(int fd);
+    void storeClientConnection(int fd, short int events);
 
     ssize_t eraseFDByIndex(ssize_t &i);
 
     void transferInfo(ClientInfo info);
+
+    void storeInfo(ClientInfo info);
 };

@@ -18,6 +18,7 @@ ThreadWorker::ThreadWorker(Storage &newStorage) : storage(newStorage) {
     }
 
     fds.push_back({addPipeFd[0], POLLIN, 0});
+    fds.push_back({transferPipeFd[0], POLLIN, 0});
 }
 
 void ThreadWorker::worker() {
@@ -61,10 +62,10 @@ ssize_t ThreadWorker::eraseFDByIndex(ssize_t &i) {
     return i;
 }
 
-void ThreadWorker::storeClientConnection(int fd) {
+void ThreadWorker::storeClientConnection(int fd, short int events = POLLIN) {
     struct pollfd pfd{};
     pfd.fd = fd;
-    pfd.events = POLLIN;
+    pfd.events = events;
     fds.push_back(pfd);
 }
 
@@ -90,6 +91,10 @@ void ThreadWorker::transferInfo(ClientInfo info) {
     if (write(transferPipeFd[1], &info, sizeof(info)) == -1) {
         throw std::runtime_error("Error writing to addPipe");
     }
+}
+
+void ThreadWorker::storeInfo(ClientInfo info) {
+    storeClientConnection(info.fd, POLLOUT);
 }
 
 
