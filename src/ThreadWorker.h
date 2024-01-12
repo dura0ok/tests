@@ -52,5 +52,5 @@ private:
 
     void storeInfo(ClientInfo* info);
 
-    void cleanClientInfo(const pollfd &pfd, bool closeFD);
+    void cleanClientInfo(ClientInfo *info, bool closeFD);
 };
