@@ -110,8 +110,10 @@ bool ThreadWorker::handleClientInput(pollfd &pfd) {
     }
 
     auto req = HttpParser::parseRequest(clientBuf);
-
-    clientSocketsURI.insert(std::make_pair(pfd.fd, req.uri));
+    ClientLocalInfo localInfo;
+    localInfo.offset = 0;
+    localInfo.uri = std::string();
+    clientSocketsURI.insert(std::make_pair(pfd.fd, localInfo));
     clientBuffersMap.erase(pfd.fd);
 
     if (!storage.containsKey(req.uri)) {
@@ -147,8 +149,8 @@ void ThreadWorker::readClientInput(int fd) {
 
 bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     printf("RECEIVE CLIENT FUNC()\n");
-    auto uri = clientSocketsURI.at(pfd.fd);
-    auto *cacheElement = storage.getElement(uri);
+    auto info = clientSocketsURI.at(pfd.fd);
+    auto *cacheElement = storage.getElement(info.uri);
 
 
     auto data = cacheElement->readData(pfd.fd);
