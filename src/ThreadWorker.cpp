@@ -39,7 +39,7 @@ void ThreadWorker::worker() {
 
         handlePipeMessages();
 
-        for (ssize_t i = 1; i < static_cast<ssize_t>(fds.size()); i++) {
+        for (ssize_t i = 2; i < static_cast<ssize_t>(fds.size()); i++) {
             auto &pfd = fds[i];
             if (serverSocketsURI.count(pfd.fd)) {
                 if (handleReadDataFromServer(pfd)) {
@@ -186,9 +186,16 @@ bool ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
 
 void ThreadWorker::handlePipeMessages() {
     int fd;
+    ClientInfo info;
     if (fds[0].revents & POLLIN) {
         while (read(addPipeFd[0], &fd, sizeof(fd)) != -1) {
             storeClientConnection(fd);
+        }
+    }
+
+    if (fds[1].revents & POLLIN) {
+        while (read(transferPipeFd[0], &info, sizeof(info)) != -1) {
+            transferInfo(info);
         }
     }
 }
