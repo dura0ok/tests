@@ -28,7 +28,7 @@ public:
 
     void initReader(int sock_fd);
 
-    std::string readData(int sock_fd);
+    std::string readData(int sock_fd, ssize_t i);
 
     void appendData(const std::string &new_data);
 

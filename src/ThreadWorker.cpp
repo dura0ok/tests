@@ -154,8 +154,7 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     auto info = clientInfo.at(pfd.fd);
     auto *cacheElement = storage.getElement(info.uri);
 
-
-    auto data = cacheElement->readData(pfd.fd);
+    std::string data = cacheElement->readData(pfd.fd, info.offset);
     std::cout << "Data read from client " << pfd.fd << std::endl;
     ssize_t bytesSend = send(pfd.fd, data.data(), data.size(), 0);
     if (bytesSend == -1 && errno == EPIPE) {

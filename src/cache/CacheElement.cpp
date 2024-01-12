@@ -24,7 +24,7 @@ void CacheElement::initReader(int sock_fd) {
     pthread_rwlock_unlock(&readerLock);
 }
 
-std::string CacheElement::readData(int sock_fd) {
+std::string CacheElement::readData(int sock_fd, ssize_t currOffset = 0) {
     pthread_rwlock_rdlock(&readerLock);
     auto &offset = userBufStates.at(sock_fd);
     pthread_rwlock_unlock(&readerLock);
