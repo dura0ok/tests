@@ -156,11 +156,7 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     char buf[BUFSIZ];
     auto size = cacheElement->readData(buf, BUFSIZ, info->offset);
     if(size == 0){
-        if(cacheElement->isFinishReading(info->offset)){
-            cleanClientInfo(pfd, true);
-            return true;
-        }
-        cleanClientInfo(pfd, false);
+        cleanClientInfo(pfd, cacheElement->isFinishReading(info->offset));
         return true;
     }
 
