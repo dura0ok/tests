@@ -161,7 +161,11 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     std::cout << "Data read from client " << pfd.fd << std::endl;
     ssize_t bytesSend = send(pfd.fd, data.data(), data.size(), 0);
 
-    if(cacheElement->isFinishReading(info.offset) || (bytesSend == -1 && errno == EPIPE)){
+    if(cacheElement->isFinishReading(info.offset) || bytesSend == -1){
+        if(bytesSend == -1){
+            fprintf(stderr, "ERROR in %s %s\n", __func__, strerror(errno));
+        }
+
         close(pfd.fd);
         clientInfo.erase(pfd.fd);
         return true;
