@@ -22,16 +22,16 @@ ThreadWorker::ThreadWorker(Storage &newStorage) : storage(newStorage) {
 }
 
 void ThreadWorker::worker() {
-    printf("worker is started\n");
+    //printf("worker is started\n");
     while (true) {
         int pollResult = poll(fds.data(), fds.size(), -1);
-        std::cout << "Success poll ";
-        for (auto &el: fds) {
-            std::cout << el.fd << " " << el.events << " || ";
-
-        }
-
-        std::cout << std::endl;
+//        std::cout << "Success poll ";
+//        for (auto &el: fds) {
+//            std::cout << el.fd << " " << el.events << " || ";
+//
+//        }
+//
+//        std::cout << std::endl;
 
         if (pollResult == -1) {
             throw std::runtime_error("poll error");
@@ -99,7 +99,7 @@ void ThreadWorker::storeInfo(ClientInfo* info) {
 
 
 bool ThreadWorker::handleClientInput(pollfd &pfd) {
-    printf("RECEIVE CLIENT INPUT FUNC()\n");
+    //printf("RECEIVE CLIENT INPUT FUNC()\n");
     readClientInput(pfd.fd);
 
     auto &clientBuf = clientBuffersMap[pfd.fd];
@@ -126,10 +126,11 @@ bool ThreadWorker::handleClientInput(pollfd &pfd) {
         cacheElement->initReader(info);
         auto serverFD = HostConnector::connectToTargetHost(req);
 
-        printf("add server socket %d\n", serverFD);
+        //printf("add server socket %d\n", serverFD);
         storeClientConnection(serverFD);
         serverSocketsURI.insert(std::make_pair(serverFD, req.uri));
         clientInfo.erase(clientFD);
+        
         return true;
     }
 
@@ -150,7 +151,7 @@ void ThreadWorker::readClientInput(int fd) {
 }
 
 bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
-    printf("RECEIVE CLIENT FUNC()\n");
+    //printf("RECEIVE CLIENT FUNC()\n");
     auto &info = clientInfo.at(pfd.fd);
     auto *cacheElement = storage.getElement(info->uri);
 
@@ -164,11 +165,11 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     }
 
 
-    std::cout << "Data read from client " << pfd.fd << std::endl;
+    //std::cout << "Data read from client " << pfd.fd << std::endl;
     ssize_t bytesSend = send(pfd.fd, data.data(), data.size(), 0);
 
     if(bytesSend == -1 || cacheElement->isFinishReading(info->offset + static_cast<ssize_t>(data.size()))){
-        printf("RECEIVE FINISH READ TEST!!!!!!!!!!\n");
+        //printf("RECEIVE FINISH READ TEST!!!!!!!!!!\n");
         if(bytesSend == -1){
             fprintf(stderr, "ERROR in %s %s\n", __func__, strerror(errno));
         }
@@ -188,7 +189,7 @@ void ThreadWorker::cleanClientInfo(const pollfd &pfd) {
 }
 
 bool ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
-    printf("SERVER DOWNLOAD\n");
+    //printf("SERVER DOWNLOAD\n");
     auto uri = serverSocketsURI.at(pfd.fd);
     auto *cacheElement = storage.getElement(uri);
 
@@ -199,14 +200,14 @@ bool ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
     cacheElement->makeReadersReadyToWrite();
 
     if (bytesRead == 0) {
-        printf("MARK IS FINISHED\n");
+        //printf("MARK IS FINISHED\n");
         cacheElement->markFinished();
         serverSocketsURI.clear();
         close(pfd.fd);
         return true;
     }
 
-    printf("Bytes read %zd\n", bytesRead);
+    //printf("Bytes read %zd\n", bytesRead);
     return false;
 }
 

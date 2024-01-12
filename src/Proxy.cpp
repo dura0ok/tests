@@ -45,6 +45,6 @@ Proxy::Proxy(int port) : listenSocket(socket(AF_INET, SOCK_STREAM, 0)), maxConne
         int client_sock_fd = accept(listenSocket, nullptr, nullptr);
         fcntl(client_sock_fd, F_SETFL, fcntl(client_sock_fd, F_GETFL, 0) | O_NONBLOCK);
         threadPool.AddFDToWorker(client_sock_fd);
-        std::cout << "new client accepted and added to fd " << client_sock_fd << std::endl;
+        //std::cout << "new client accepted and added to fd " << client_sock_fd << std::endl;
     }
 }
