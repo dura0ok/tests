@@ -158,9 +158,9 @@ bool ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
 
     char buf[CHUNK_SIZE] = {'\0'};
     ssize_t bytesRead = recv(pfd.fd, buf, CHUNK_SIZE, 0);
-    cacheElement->makeReadersReadyToWrite(fds);
-    cacheElement->appendData(std::string(buf, bytesRead));
 
+    cacheElement->appendData(std::string(buf, bytesRead));
+    cacheElement->makeReadersReadyToWrite(fds);
 
     if (bytesRead == 0) {
         printf("MARK IS FINISHED\n");
