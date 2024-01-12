@@ -18,7 +18,7 @@ public:
     explicit ThreadWorker(Storage &storage);
 
     void addPipe(int writeEnd);
-    void transferInfo(ClientInfo &info);
+    void transferInfo(ClientInfo *info);
 
 private:
     std::vector<pollfd> fds;

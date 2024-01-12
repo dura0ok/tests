@@ -6,6 +6,7 @@
 #include <vector>
 #include <sys/poll.h>
 #include <shared_mutex>
+#include "../ClientInfo.h"
 
 class CacheElement {
 public:
@@ -24,24 +25,17 @@ public:
 
     void markFinished();
 
-    bool isFinished() const;
-
-    void initReader(int sock_fd, ssize_t offset);
+    void initReader(ClientInfo* info);
 
     std::string readData(ssize_t offset);
 
     void appendData(const std::string &new_data);
 
-    void clearReader(int sock_fd);
-
-
-    size_t getReadersCount();
-
-    void makeReadersReadyToWrite(const std::string &uri);
+    void makeReadersReadyToWrite();
 
 private:
 
-    std::map<int, ssize_t> userBufStates;
+    std::map<int, ClientInfo*> userBufStates;
     pthread_rwlock_t mData{};
     pthread_rwlock_t mUserBufStates{};
     std::string data;

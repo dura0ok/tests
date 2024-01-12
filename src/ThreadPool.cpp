@@ -16,7 +16,7 @@ void ThreadPool::AddFDToWorker(int fd) {
     std::cout << "Add fd " << fd << std::endl;
 }
 
-void ThreadPool::AddClientInfoToWorker(ClientInfo &info) {
+void ThreadPool::AddClientInfoToWorker(ClientInfo *info) {
     auto res = incrementCurrentThread();
     auto worker = workers[res].get();
     worker->transferInfo(info);

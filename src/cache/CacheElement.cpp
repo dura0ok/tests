@@ -17,9 +17,9 @@ void CacheElement::markFinished() {
     pthread_rwlock_unlock(&mUserBufStates);
 }
 
-void CacheElement::initReader(int sock_fd, ssize_t offset) {
+void CacheElement::initReader(ClientInfo *info) {
     pthread_rwlock_wrlock(&mUserBufStates);
-    userBufStates.insert(std::make_pair(sock_fd, offset));
+    userBufStates.insert(std::make_pair(info->fd, info));
     pthread_rwlock_unlock(&mUserBufStates);
 }
 
@@ -36,15 +36,10 @@ void CacheElement::appendData(const std::string &new_data) {
     pthread_rwlock_unlock(&mData);
 }
 
-void CacheElement::makeReadersReadyToWrite(const std::string &uri) {
-    ClientInfo info;
-    info.uri = uri;
-    assert(pool);
+void CacheElement::makeReadersReadyToWrite() {
     pthread_rwlock_wrlock(&mUserBufStates);
     for (auto &userBufState: userBufStates) {
-        info.fd = userBufState.first;
-        info.offset = userBufState.second;
-        pool->AddClientInfoToWorker(info);
+        pool->AddClientInfoToWorker(userBufState.second);
     }
     userBufStates.clear();
     pthread_rwlock_unlock(&mUserBufStates);

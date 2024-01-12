@@ -86,7 +86,7 @@ void ThreadWorker::addPipe(int writeEnd) {
     }
 }
 
-void ThreadWorker::transferInfo(ClientInfo &info) {
+void ThreadWorker::transferInfo(ClientInfo *info) {
     if (write(transferPipeFd[1], &info, sizeof(info)) == -1) {
         throw std::runtime_error("Error writing to addPipe");
     }
@@ -102,11 +102,11 @@ void ThreadWorker::storeInfo(ClientInfo& info) {
 
 
 bool ThreadWorker::handleClientInput(pollfd &pfd) {
-
     printf("RECEIVE CLIENT INPUT FUNC()\n");
     readClientInput(pfd.fd);
 
     auto &clientBuf = clientBuffersMap[pfd.fd];
+
     if (!HttpParser::isHttpRequestComplete(clientBuf)) {
         return false;
     }
@@ -118,12 +118,17 @@ bool ThreadWorker::handleClientInput(pollfd &pfd) {
     clientInfo.insert(std::make_pair(pfd.fd, localInfo));
     clientBuffersMap.erase(pfd.fd);
 
+    auto* info = new ClientInfo();
+    info->uri = req.uri;
+    info->fd = pfd.fd;
+    info->offset = 0;
+
     if (!storage.containsKey(req.uri)) {
         storage.initElement(req.uri);
         int clientFD = pfd.fd;
         pfd.fd = -1;
         auto *cacheElement = storage.getElement(req.uri);
-        cacheElement->initReader(clientFD, 0);
+        cacheElement->initReader(info);
         auto serverFD = HostConnector::connectToTargetHost(req);
 
         printf("add server socket %d\n", serverFD);
@@ -185,12 +190,12 @@ bool ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
     ssize_t bytesRead = recv(pfd.fd, buf, CHUNK_SIZE, 0);
 
     cacheElement->appendData(std::string(buf, bytesRead));
-    cacheElement->makeReadersReadyToWrite(uri);
+    cacheElement->makeReadersReadyToWrite();
 
     if (bytesRead == 0) {
         printf("MARK IS FINISHED\n");
         cacheElement->markFinished();
-
+        serverSocketsURI.clear();
         close(pfd.fd);
         return true;
     }

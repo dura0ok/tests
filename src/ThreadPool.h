@@ -14,7 +14,7 @@ public:
     explicit ThreadPool(size_t pool_size);
 
     void AddFDToWorker(int fd);
-    void AddClientInfoToWorker(ClientInfo &info);
+    void AddClientInfoToWorker(ClientInfo *info);
 private:
     size_t incrementCurrentThread();
 
