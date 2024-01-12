@@ -2,6 +2,7 @@
 #include "../Config.h"
 #include "../ClientInfo.h"
 #include "../ThreadPool.h"
+#include <cstring>
 
 bool CacheElement::isFinishReading(ssize_t offset) {
     pthread_rwlock_rdlock(&mData);
@@ -23,16 +24,17 @@ void CacheElement::initReader(ClientInfo *info) {
     pthread_rwlock_unlock(&mUserBufStates);
 }
 
-std::string CacheElement::readData(ssize_t offset) {
+size_t CacheElement::readData(char* buf, size_t buf_size, ssize_t offset) {
+    auto copySize = (data.size() >= (buf_size + offset)) ? buf_size : (data.size() - offset);
     pthread_rwlock_rdlock(&mData);
-    auto res = data.substr(offset, CHUNK_SIZE);
+    std::memcpy(buf, data.data() + offset, copySize);
     pthread_rwlock_unlock(&mData);
-    return res;
+    return copySize;
 }
 
-void CacheElement::appendData(const std::string &new_data) {
+void CacheElement::appendData(const char *buf, size_t size){
     pthread_rwlock_wrlock(&mData);
-    data += new_data;
+    data.append(std::string_view(buf, size));
     pthread_rwlock_unlock(&mData);
 }
 

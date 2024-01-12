@@ -27,12 +27,15 @@ public:
 
     void initReader(ClientInfo* info);
 
-    std::string readData(ssize_t offset);
+    size_t readData(char* buf, size_t buf_size, ssize_t offset);
 
-    void appendData(const std::string &new_data);
+    void appendData(const char *buf, size_t size);
 
     void makeReadersReadyToWrite();
 
+    size_t getDataSize(){
+        return data.size();
+    }
 private:
 
     std::map<int, ClientInfo*> userBufStates;
