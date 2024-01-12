@@ -123,7 +123,7 @@ bool ThreadWorker::handleClientInput(pollfd &pfd) {
         int clientFD = pfd.fd;
         pfd.fd = -1;
         auto *cacheElement = storage.getElement(req.uri);
-        cacheElement->initReader(clientFD);
+        cacheElement->initReader(clientFD, 0);
         auto serverFD = HostConnector::connectToTargetHost(req);
 
         printf("add server socket %d\n", serverFD);
@@ -154,7 +154,7 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     auto info = clientInfo.at(pfd.fd);
     auto *cacheElement = storage.getElement(info.uri);
 
-    std::string data = cacheElement->readData(pfd.fd, info.offset);
+    std::string data = cacheElement->readData(info.offset);
 
     if (data.empty()) {
         printf("EMPTY DATA in receive\n");

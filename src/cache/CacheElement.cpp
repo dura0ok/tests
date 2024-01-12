@@ -29,10 +29,6 @@ std::string CacheElement::readData(ssize_t offset) {
     pthread_rwlock_rdlock(&rwlock);
     auto res = data.substr(offset, CHUNK_SIZE);
     pthread_rwlock_unlock(&rwlock);
-
-    pthread_mutex_lock(&dataMutex);
-    pthread_cond_wait(&dataCond, &dataMutex);
-    pthread_mutex_unlock(dataMutex);
     return res;
 }
 
@@ -58,9 +54,6 @@ void CacheElement::makeReadersReadyToWrite(std::vector<pollfd> &fds) {
         auto userOffset = static_cast<size_t>(userBufState.second);
         if (userOffset < data.size()) {
             fds[userBufState.first].events |= POLLOUT;
-            pthread_mutex_lock(&dataMutex);
-            pthread_cond_broadcast(&dataCond);
-            pthread_mutex_unlock(&dataMutex);
         }
     }
 }

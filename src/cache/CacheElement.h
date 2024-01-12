@@ -45,8 +45,4 @@ private:
     pthread_rwlock_t readerLock{};
     std::string data;
     bool finished{};
-
-    pthread_mutex_t dataMutex = PTHREAD_MUTEX_INITIALIZER;
-    pthread_cond_t dataCond = PTHREAD_COND_INITIALIZER;
-
 };
