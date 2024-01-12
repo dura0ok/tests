@@ -8,11 +8,6 @@
 #include "helpers/HttpParser.h"
 #include "ClientInfo.h"
 
-typedef struct{
-    ssize_t offset;
-    std::string uri;
-} ClientLocalInfo;
-
 class ThreadWorker {
 public:
     explicit ThreadWorker(Storage &storage);
@@ -32,7 +27,7 @@ private:
     void worker();
 
     std::map<int, std::string> serverSocketsURI;
-    std::map<int, ClientLocalInfo> clientInfo;
+    std::map<int, ClientInfo*> clientInfo;
     std::map<int, std::string> clientBuffersMap;
 
     bool handleClientConnection(pollfd &pfd);
@@ -55,5 +50,5 @@ private:
 
 
 
-    void storeInfo(ClientInfo& info);
+    void storeInfo(ClientInfo* info);
 };

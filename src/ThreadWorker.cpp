@@ -92,12 +92,9 @@ void ThreadWorker::transferInfo(ClientInfo *info) {
     }
 }
 
-void ThreadWorker::storeInfo(ClientInfo& info) {
-    storeClientConnection(info.fd, POLLOUT);
-    ClientLocalInfo localInfo;
-    localInfo.uri = info.uri;
-    localInfo.offset = info.offset;
-    clientInfo.insert(std::make_pair(info.fd, localInfo));
+void ThreadWorker::storeInfo(ClientInfo* info) {
+    storeClientConnection(info->fd, POLLOUT);
+    clientInfo.insert(std::make_pair(info->fd, info));
 }
 
 
@@ -112,16 +109,14 @@ bool ThreadWorker::handleClientInput(pollfd &pfd) {
     }
 
     auto req = HttpParser::parseRequest(clientBuf);
-    ClientLocalInfo localInfo;
-    localInfo.offset = 0;
-    localInfo.uri = std::string();
-    clientInfo.insert(std::make_pair(pfd.fd, localInfo));
+
     clientBuffersMap.erase(pfd.fd);
 
     auto* info = new ClientInfo();
     info->uri = req.uri;
     info->fd = pfd.fd;
     info->offset = 0;
+    clientInfo.insert(std::make_pair(pfd.fd, info));
 
     if (!storage.containsKey(req.uri)) {
         storage.initElement(req.uri);
@@ -157,16 +152,16 @@ void ThreadWorker::readClientInput(int fd) {
 bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     printf("RECEIVE CLIENT FUNC()\n");
     auto &info = clientInfo.at(pfd.fd);
-    auto *cacheElement = storage.getElement(info.uri);
+    auto *cacheElement = storage.getElement(info->uri);
 
-    std::string data = cacheElement->readData(info.offset);
+    std::string data = cacheElement->readData(info->offset);
 
     assert(!data.empty());
 
     std::cout << "Data read from client " << pfd.fd << std::endl;
     ssize_t bytesSend = send(pfd.fd, data.data(), data.size(), 0);
 
-    if(cacheElement->isFinishReading(info.offset) || bytesSend == -1){
+    if(cacheElement->isFinishReading(info->offset) || bytesSend == -1){
         if(bytesSend == -1){
             fprintf(stderr, "ERROR in %s %s\n", __func__, strerror(errno));
         }
@@ -176,7 +171,7 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
         return true;
     }
 
-    info.offset += static_cast<ssize_t>(data.size());
+    info->offset += static_cast<ssize_t>(data.size());
 
     return false;
 }
@@ -206,7 +201,7 @@ bool ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
 
 void ThreadWorker::handlePipeMessages() {
     int fd;
-    ClientInfo info;
+    ClientInfo *info;
     if (fds[0].revents & POLLIN) {
         while (read(addPipeFd[0], &fd, sizeof(fd)) != -1) {
             storeClientConnection(fd);
