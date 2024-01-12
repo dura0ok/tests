@@ -2,9 +2,9 @@
 #include "../Config.h"
 
 bool CacheElement::isFinishReading(int sock_fd) {
-    pthread_rwlock_rdlock(&readerlock);
+    pthread_rwlock_rdlock(&readerLock);
     size_t offset = userBufStates.at(sock_fd);
-    pthread_rwlock_unlock(&readerlock);
+    pthread_rwlock_unlock(&readerLock);
     return finished && (offset == data.size());
 }
 
@@ -13,21 +13,21 @@ void CacheElement::markFinished() {
 }
 
 void CacheElement::clearReader(int sock_fd) {
-    pthread_rwlock_wrlock(&readerlock);
+    pthread_rwlock_wrlock(&readerLock);
     userBufStates.erase(sock_fd);
-    pthread_rwlock_unlock(&readerlock);
+    pthread_rwlock_unlock(&readerLock);
 }
 
 void CacheElement::initReader(int sock_fd) {
-    pthread_rwlock_wrlock(&readerlock);
+    pthread_rwlock_wrlock(&readerLock);
     userBufStates.insert(std::make_pair(sock_fd, 0));
-    pthread_rwlock_unlock(&readerlock);
+    pthread_rwlock_unlock(&readerLock);
 }
 
 std::string CacheElement::readData(int sock_fd) {
-    pthread_rwlock_rdlock(&readerlock);
+    pthread_rwlock_rdlock(&readerLock);
     auto &offset = userBufStates.at(sock_fd);
-    pthread_rwlock_unlock(&readerlock);
+    pthread_rwlock_unlock(&readerLock);
     pthread_rwlock_rdlock(&rwlock);
     auto res = data.substr(offset, CHUNK_SIZE);
     offset += static_cast<long>(res.size());
@@ -45,9 +45,9 @@ void CacheElement::appendData(const std::string &new_data) {
 }
 
 size_t CacheElement::getReadersCount() {
-    pthread_rwlock_rdlock(&readerlock);
+    pthread_rwlock_rdlock(&readerLock);
     size_t result = userBufStates.size();
-    pthread_rwlock_unlock(&readerlock);
+    pthread_rwlock_unlock(&readerLock);
     return result;
 }
 

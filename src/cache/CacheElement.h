@@ -11,12 +11,12 @@ class CacheElement {
 public:
     CacheElement() {
         pthread_rwlock_init(&rwlock, nullptr);
-        pthread_rwlock_init(&readerlock, nullptr);
+        pthread_rwlock_init(&readerLock, nullptr);
     }
 
     ~CacheElement() {
         pthread_rwlock_destroy(&rwlock);
-        pthread_rwlock_destroy(&readerlock);
+        pthread_rwlock_destroy(&readerLock);
     }
 
 
@@ -42,11 +42,10 @@ public:
 private:
     std::map<int, ssize_t> userBufStates;
     pthread_rwlock_t rwlock{};
-    pthread_rwlock_t readerlock{};
+    pthread_rwlock_t readerLock{};
     std::string data;
     bool finished{};
 
-    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
     pthread_mutex_t dataMutex = PTHREAD_MUTEX_INITIALIZER;
     pthread_cond_t dataCond = PTHREAD_COND_INITIALIZER;
 
