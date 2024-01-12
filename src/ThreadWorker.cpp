@@ -157,10 +157,11 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     auto size = cacheElement->readData(buf, BUFSIZ, info->offset);
     if(size == 0){
         if(cacheElement->isFinishReading(info->offset)){
-            cleanClientInfo(pfd);
+            cleanClientInfo(pfd, true);
             return true;
         }
-        return false;
+        cleanClientInfo(pfd, false);
+        return true;
     }
 
 
@@ -173,7 +174,7 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
             fprintf(stderr, "ERROR in %s %s\n", __func__, strerror(errno));
         }
 
-        cleanClientInfo(pfd);
+        cleanClientInfo(pfd, true);
         return true;
     }
 
@@ -182,8 +183,10 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     return false;
 }
 
-void ThreadWorker::cleanClientInfo(const pollfd &pfd) {
-    close(pfd.fd);
+void ThreadWorker::cleanClientInfo(const pollfd &pfd, bool closeFD) {
+    if(closeFD){
+       close(pfd.fd);
+    }
     clientInfo.erase(pfd.fd);
 }
 
