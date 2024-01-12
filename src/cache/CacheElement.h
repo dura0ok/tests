@@ -10,13 +10,13 @@
 class CacheElement {
 public:
     CacheElement() {
-        pthread_rwlock_init(&rwlock, nullptr);
-        pthread_rwlock_init(&readerLock, nullptr);
+        pthread_rwlock_init(&mData, nullptr);
+        pthread_rwlock_init(&mUserBufStates, nullptr);
     }
 
     ~CacheElement() {
-        pthread_rwlock_destroy(&rwlock);
-        pthread_rwlock_destroy(&readerLock);
+        pthread_rwlock_destroy(&mData);
+        pthread_rwlock_destroy(&mUserBufStates);
     }
 
 
@@ -40,9 +40,10 @@ public:
     void makeReadersReadyToWrite(const std::string &uri);
 
 private:
+
     std::map<int, ssize_t> userBufStates;
-    pthread_rwlock_t rwlock{};
-    pthread_rwlock_t readerLock{};
+    pthread_rwlock_t mData{};
+    pthread_rwlock_t mUserBufStates{};
     std::string data;
     bool finished{};
 };
