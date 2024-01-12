@@ -50,5 +50,5 @@ private:
 
     void transferInfo(ClientInfo info);
 
-    void storeInfo(ClientInfo info);
+    void storeInfo(const ClientInfo& info);
 };

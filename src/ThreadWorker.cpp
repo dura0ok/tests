@@ -93,8 +93,9 @@ void ThreadWorker::transferInfo(ClientInfo info) {
     }
 }
 
-void ThreadWorker::storeInfo(ClientInfo info) {
+void ThreadWorker::storeInfo(const ClientInfo& info) {
     storeClientConnection(info.fd, POLLOUT);
+
 }
 
 
