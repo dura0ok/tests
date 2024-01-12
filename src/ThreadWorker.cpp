@@ -209,7 +209,7 @@ void ThreadWorker::handlePipeMessages() {
     }
 
     if (fds[1].revents & POLLIN) {
-        while (read(transferPipeFd[0], &info, sizeof(info)) != -1) {
+        while (read(transferPipeFd[0], &info, sizeof(ClientInfo*)) != -1) {
             storeInfo(info);
         }
     }
