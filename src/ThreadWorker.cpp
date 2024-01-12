@@ -95,7 +95,7 @@ void ThreadWorker::transferInfo(ClientInfo &info) {
 void ThreadWorker::storeInfo(ClientInfo& info) {
     storeClientConnection(info.fd, POLLOUT);
     ClientLocalInfo localInfo;
-    localInfo.uri = std::move(info.uri);
+    localInfo.uri = info.uri;
     localInfo.offset = info.offset;
     clientInfo.insert(std::make_pair(info.fd, localInfo));
 }
@@ -210,7 +210,7 @@ void ThreadWorker::handlePipeMessages() {
 
     if (fds[1].revents & POLLIN) {
         while (read(transferPipeFd[0], &info, sizeof(info)) != -1) {
-            transferInfo(info);
+            storeInfo(info);
         }
     }
 }
