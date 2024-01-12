@@ -155,13 +155,16 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     auto *cacheElement = storage.getElement(info->uri);
 
     std::string data = cacheElement->readData(info->offset);
+    if(data.empty()){
+        assert(!data.empty());
+    }
 
-    assert(!data.empty());
 
     std::cout << "Data read from client " << pfd.fd << std::endl;
     ssize_t bytesSend = send(pfd.fd, data.data(), data.size(), 0);
 
-    if(cacheElement->isFinishReading(info->offset) || bytesSend == -1){
+    if(bytesSend == -1 || cacheElement->isFinishReading(info->offset + static_cast<ssize_t>(data.size()))){
+        printf("RECEIVE FINISH READ TEST!!!!!!!!!!\n");
         if(bytesSend == -1){
             fprintf(stderr, "ERROR in %s %s\n", __func__, strerror(errno));
         }
