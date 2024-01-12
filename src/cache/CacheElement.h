@@ -43,13 +43,15 @@ public:
     }
 
     bool isReadersEmpty() {
-        size_t expected = 5;
+        size_t expected = 0;
         size_t tmp = 0;
         if (readersCount.compare_exchange_strong(expected, tmp)) {
             return true;
         }
         return false;
     }
+
+    int getStatusCode();
 
 private:
 

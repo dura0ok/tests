@@ -150,6 +150,14 @@ void ThreadWorker::readClientInput(int fd) {
     clientBuf += std::string(buf, bytesRead);
 }
 
+void ThreadWorker::handleFinishRead(ClientInfo *info, CacheElement *cacheElement, bool closeFD) {
+    cacheElement->decrementReadersCount();
+    if (cacheElement->isReadersEmpty() && cacheElement->getStatusCode() != 200) {
+        storage.clearElement(info->uri);
+    }
+    cleanClientInfo(info, closeFD);
+}
+
 bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     //printf("RECEIVE CLIENT FUNC()\n");
     auto &info = clientInfo.at(pfd.fd);
@@ -157,7 +165,7 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     char buf[BUFSIZ];
     auto size = cacheElement->readData(buf, BUFSIZ, info->offset);
     if (size == 0) {
-        cleanClientInfo(info, cacheElement->isFinishReading(info->offset));
+        handleFinishRead(info, cacheElement, cacheElement->isFinishReading(info->offset));
         return true;
     }
 
@@ -171,7 +179,8 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
             fprintf(stderr, "ERROR in %s %s\n", __func__, strerror(errno));
         }
 
-        cleanClientInfo(info, true);
+
+        handleFinishRead(info, cacheElement, true);
         return true;
     }
 

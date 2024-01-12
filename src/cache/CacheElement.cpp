@@ -1,6 +1,4 @@
 #include "CacheElement.h"
-#include "../Config.h"
-#include "../ClientInfo.h"
 #include "../ThreadPool.h"
 #include <cstring>
 
@@ -46,5 +44,9 @@ void CacheElement::makeReadersReadyToWrite() {
     }
     userBufStates.clear();
     pthread_rwlock_unlock(&mUserBufStates);
+}
+
+int CacheElement::getStatusCode() {
+    return HttpParser::parseStatusCode(data);
 }
 
