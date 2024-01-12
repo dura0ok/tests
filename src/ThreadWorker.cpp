@@ -100,6 +100,7 @@ bool ThreadWorker::handleClientInput(pollfd &pfd) {
     auto req = HttpParser::parseRequest(clientBuf);
 
     clientSocketsURI.insert(std::make_pair(pfd.fd, req.uri));
+    clientBuffersMap.erase(pfd.fd);
 
     if (!storage.containsKey(req.uri)) {
         storage.initElement(req.uri);
@@ -113,12 +114,10 @@ bool ThreadWorker::handleClientInput(pollfd &pfd) {
         storeClientConnection(serverFD);
         serverSocketsURI.insert(std::make_pair(serverFD, req.uri));
         clientSocketsURI.erase(clientFD);
-        clientBuffersMap.erase(pfd.fd);
         return true;
     }
 
     pfd.events = POLLOUT;
-    clientBuffersMap.erase(pfd.fd);
     return false;
 }
 
