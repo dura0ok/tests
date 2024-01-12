@@ -27,8 +27,8 @@ size_t ThreadPool::incrementCurrentThread() {
     size_t newCurrentThread;
     localCurrentThread = current_thread.load(std::memory_order_relaxed);
     do {
-        newCurrentThread = ( localCurrentThread + 1 ) % pool_size;
-    }while (!current_thread.compare_exchange_strong(localCurrentThread, newCurrentThread,
-                                                   std::memory_order_relaxed, std::memory_order_relaxed));
+        newCurrentThread = (localCurrentThread + 1) % pool_size;
+    } while (!current_thread.compare_exchange_strong(localCurrentThread, newCurrentThread,
+                                                     std::memory_order_relaxed, std::memory_order_relaxed));
     return localCurrentThread;
 }

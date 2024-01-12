@@ -88,12 +88,12 @@ void ThreadWorker::addPipe(int writeEnd) {
 }
 
 void ThreadWorker::transferInfo(ClientInfo *info) {
-    if (write(transferPipeFd[1], &info, sizeof(ClientInfo*)) == -1) {
+    if (write(transferPipeFd[1], &info, sizeof(ClientInfo *)) == -1) {
         throw std::runtime_error("Error writing to addPipe");
     }
 }
 
-void ThreadWorker::storeInfo(ClientInfo* info) {
+void ThreadWorker::storeInfo(ClientInfo *info) {
     storeClientConnection(info->fd, POLLOUT);
     clientInfo.insert(std::make_pair(info->fd, info));
 }
@@ -113,7 +113,7 @@ bool ThreadWorker::handleClientInput(pollfd &pfd) {
 
     clientBuffersMap.erase(pfd.fd);
 
-    auto* info = new ClientInfo();
+    auto *info = new ClientInfo();
     info->uri = req.uri;
     info->fd = pfd.fd;
     info->offset = 0;
@@ -156,7 +156,7 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     auto *cacheElement = storage.getElement(info->uri);
     char buf[BUFSIZ];
     auto size = cacheElement->readData(buf, BUFSIZ, info->offset);
-    if(size == 0){
+    if (size == 0) {
         cleanClientInfo(info, cacheElement->isFinishReading(info->offset));
         return true;
     }
@@ -165,9 +165,9 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     //std::cout << "Data read from client " << pfd.fd << std::endl;
     ssize_t bytesSend = send(pfd.fd, buf, size, 0);
 
-    if(bytesSend == -1 || cacheElement->isFinishReading(info->offset + static_cast<ssize_t>(size))){
+    if (bytesSend == -1 || cacheElement->isFinishReading(info->offset + static_cast<ssize_t>(size))) {
         printf("RECEIVE FINISH READ TEST!!!!!!!!!!\n");
-        if(bytesSend == -1){
+        if (bytesSend == -1) {
             fprintf(stderr, "ERROR in %s %s\n", __func__, strerror(errno));
         }
 
@@ -181,8 +181,8 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
 }
 
 void ThreadWorker::cleanClientInfo(ClientInfo *info, bool closeFD) {
-    if(closeFD){
-       close(info->fd);
+    if (closeFD) {
+        close(info->fd);
         fprintf(stderr, "CLOSING %d %s\n", info->fd, __func__);
     }
     clientInfo.erase(info->fd);
@@ -197,13 +197,12 @@ bool ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
     char buf[CHUNK_SIZE] = {'\0'};
     ssize_t bytesRead = recv(pfd.fd, buf, CHUNK_SIZE, 0);
 
-    if(bytesRead < 0){
+    if (bytesRead < 0) {
         fprintf(stderr, "ERROR < 0 %s\n", strerror(errno));
     }
 
     cacheElement->appendData(buf, bytesRead);
     cacheElement->makeReadersReadyToWrite();
-
 
 
     if (bytesRead == 0) {
@@ -229,7 +228,7 @@ void ThreadWorker::handlePipeMessages() {
     }
 
     if (fds[1].revents & POLLIN) {
-        while (read(transferPipeFd[0], &info, sizeof(ClientInfo*)) != -1) {
+        while (read(transferPipeFd[0], &info, sizeof(ClientInfo *)) != -1) {
             storeInfo(info);
         }
     }

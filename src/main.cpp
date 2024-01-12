@@ -25,7 +25,7 @@ int parseThreadPoolSize(const char *threadpoolArg) {
     }
 }
 
-ThreadPool* pool;
+ThreadPool *pool;
 
 int main(int argc, char **argv) {
     if (argc != 2) {

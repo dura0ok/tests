@@ -13,6 +13,7 @@ public:
     explicit ThreadWorker(Storage &storage);
 
     void addPipe(int writeEnd);
+
     void transferInfo(ClientInfo *info);
 
 private:
@@ -27,7 +28,7 @@ private:
     void worker();
 
     std::map<int, std::string> serverSocketsURI;
-    std::map<int, ClientInfo*> clientInfo;
+    std::map<int, ClientInfo *> clientInfo;
     std::map<int, std::string> clientBuffersMap;
 
     bool handleClientConnection(pollfd &pfd);
@@ -49,8 +50,7 @@ private:
     ssize_t eraseFDByIndex(ssize_t &i);
 
 
-
-    void storeInfo(ClientInfo* info);
+    void storeInfo(ClientInfo *info);
 
     void cleanClientInfo(ClientInfo *info, bool closeFD);
 };

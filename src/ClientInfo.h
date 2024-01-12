@@ -13,7 +13,7 @@ typedef struct {
     int fd;
     ssize_t offset;
     std::string uri;
-}ClientInfo;
+} ClientInfo;
 
 
 #endif //HTTP_PROXY_V2_CLIENTINFO_H
