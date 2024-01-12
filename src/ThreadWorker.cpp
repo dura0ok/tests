@@ -13,7 +13,7 @@
 
 ThreadWorker::ThreadWorker(Storage &newStorage) : storage(newStorage) {
     thread = std::thread([this]() { ThreadWorker::worker(); });
-    if (pipe2(addPipeFd, O_NONBLOCK) == -1) {
+    if (pipe2(addPipeFd, O_NONBLOCK) == -1 || pipe2(transferPipeFd, O_NONBLOCK) == -1) {
         throw std::runtime_error("Error creating pipes");
     }
 
@@ -82,6 +82,12 @@ bool ThreadWorker::handleClientConnection(pollfd &pfd) {
 
 void ThreadWorker::addPipe(int writeEnd) {
     if (write(addPipeFd[1], &writeEnd, sizeof(writeEnd)) == -1) {
+        throw std::runtime_error("Error writing to addPipe");
+    }
+}
+
+void ThreadWorker::transferInfo(ClientInfo info) {
+    if (write(transferPipeFd[1], &info, sizeof(info)) == -1) {
         throw std::runtime_error("Error writing to addPipe");
     }
 }

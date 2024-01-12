@@ -6,6 +6,7 @@
 #include <sys/poll.h>
 #include "cache/Storage.h"
 #include "helpers/HttpParser.h"
+#include "ClientInfo.h"
 
 class ThreadWorker {
 public:
@@ -21,6 +22,7 @@ private:
 
 
     int addPipeFd[2]{};
+    int transferPipeFd[2]{};
 
     void worker();
 
@@ -42,11 +44,9 @@ private:
 
     void handlePipeMessages();
 
-    void applyPendingChanges();
-
     void storeClientConnection(int fd);
 
-    void removeClientConnection(int fd);
-
     ssize_t eraseFDByIndex(ssize_t &i);
+
+    void transferInfo(ClientInfo info);
 };

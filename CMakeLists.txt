@@ -12,4 +12,5 @@ add_compile_options(-g -O0 -Wall -Wextra -Werror -Wshadow -Wold-style-cast -Wcas
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 
 add_executable(http_proxy_v2 ${SOURCES}
-        src/Config.h)
+        src/Config.h
+        src/ClientInfo.h)
