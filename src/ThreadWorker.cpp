@@ -103,18 +103,19 @@ bool ThreadWorker::handleClientInput(pollfd &pfd) {
 
     if (!storage.containsKey(req.uri)) {
         storage.initElement(req.uri);
+        int clientFD = pfd.fd;
+        pfd.fd = -1;
+        auto *cacheElement = storage.getElement(req.uri);
+        cacheElement->initReader(clientFD);
         auto serverFD = HostConnector::connectToTargetHost(req);
+
         printf("add server socket %d\n", serverFD);
         storeClientConnection(serverFD);
         serverSocketsURI.insert(std::make_pair(serverFD, req.uri));
+        clientSocketsURI.erase(clientFD);
     }
 
-
-
-    int clientFD = pfd.fd;
-    pfd.fd = -1;
-    auto *cacheElement = storage.getElement(req.uri);
-    cacheElement->initReader(clientFD);
+    pfd.events = POLLOUT;
     clientBuf.clear();
     return true;
 }
