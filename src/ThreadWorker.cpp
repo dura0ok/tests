@@ -156,7 +156,11 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
 
     std::string data = cacheElement->readData(info->offset);
     if(data.empty()){
-        assert(!data.empty());
+        if(cacheElement->isFinishReading(info->offset)){
+            cleanClientInfo(pfd);
+            return true;
+        }
+        return false;
     }
 
 
@@ -169,14 +173,18 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
             fprintf(stderr, "ERROR in %s %s\n", __func__, strerror(errno));
         }
 
-        close(pfd.fd);
-        clientInfo.erase(pfd.fd);
+        cleanClientInfo(pfd);
         return true;
     }
 
     info->offset += static_cast<ssize_t>(data.size());
 
     return false;
+}
+
+void ThreadWorker::cleanClientInfo(const pollfd &pfd) {
+    close(pfd.fd);
+    clientInfo.erase(pfd.fd);
 }
 
 bool ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
