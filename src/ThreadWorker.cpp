@@ -113,11 +113,12 @@ bool ThreadWorker::handleClientInput(pollfd &pfd) {
         storeClientConnection(serverFD);
         serverSocketsURI.insert(std::make_pair(serverFD, req.uri));
         clientSocketsURI.erase(clientFD);
+        return true;
     }
 
     pfd.events = POLLOUT;
     clientBuf.clear();
-    return true;
+    return false;
 }
 
 void ThreadWorker::readClientInput(int fd) {
