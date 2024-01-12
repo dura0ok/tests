@@ -1,5 +1,6 @@
 #include "CacheElement.h"
 #include "../Config.h"
+#include "../ClientInfo.h"
 
 bool CacheElement::isFinishReading(ssize_t offset) {
     pthread_rwlock_rdlock(&readerLock);
@@ -51,12 +52,17 @@ bool CacheElement::isFinished() const {
     return finished;
 }
 
-void CacheElement::makeReadersReadyToWrite(std::vector<pollfd> &fds) {
+void CacheElement::makeReadersReadyToWrite(const std::string &uri) {
+    ClientInfo info;
+    info.uri = uri;
     for (auto &userBufState: userBufStates) {
-        auto userOffset = static_cast<size_t>(userBufState.second);
-        if (userOffset < data.size()) {
-            fds[userBufState.first].events |= POLLOUT;
-        }
+        info.fd = userBufState.first;
+        info.offset = userBufState.second;
+
+//        auto userOffset = static_cast<size_t>(userBufState.second);
+//        if (userOffset < data.size()) {
+//            fds[userBufState.first].events |= POLLOUT;
+//        }
     }
 }
 

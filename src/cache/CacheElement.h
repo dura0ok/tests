@@ -37,7 +37,7 @@ public:
 
     size_t getReadersCount();
 
-    void makeReadersReadyToWrite(std::vector<pollfd> &fds);
+    void makeReadersReadyToWrite(const std::string &uri);
 
 private:
     std::map<int, ssize_t> userBufStates;
