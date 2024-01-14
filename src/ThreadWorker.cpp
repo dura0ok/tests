@@ -235,6 +235,7 @@ bool ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
     if (cacheElement->isReadersEmpty()){
         close(pfd.fd);
         storage.clearElement(uri);
+        serverSocketsURI.erase(pfd.fd);
         return true;
     }
 
