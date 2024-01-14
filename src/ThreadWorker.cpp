@@ -228,8 +228,15 @@ bool ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
     auto uri = serverSocketsURI.at(pfd.fd);
     auto *cacheElement = storage.getElement(uri);
 
+    if (cacheElement->isReadersEmpty()){
+        storage.clearElement(uri);
+        return true;
+    }
+
     char buf[CHUNK_SIZE] = {'\0'};
     ssize_t bytesRead = recv(pfd.fd, buf, CHUNK_SIZE, 0);
+
+
 
     if (bytesRead < 0) {
         if(errno != EAGAIN){
