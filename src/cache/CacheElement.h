@@ -28,6 +28,7 @@ public:
 
     void initReader(ClientInfo *info);
 
+
     size_t readData(char *buf, size_t buf_size, ssize_t offset);
 
     void appendData(const char *buf, size_t size);
@@ -40,6 +41,10 @@ public:
 
     void decrementReadersCount() {
         readersCount.fetch_sub(1, std::memory_order_relaxed);
+    }
+
+    void incrementReadersCount() {
+        readersCount.fetch_add(1, std::memory_order_relaxed);
     }
 
     bool isReadersEmpty() {

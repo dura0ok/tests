@@ -98,10 +98,19 @@ void ThreadWorker::storeInfo(ClientInfo *info) {
     clientInfo.insert(std::make_pair(info->fd, info));
 }
 
+void sendHTTP500Error(int clientSocket) {
+    std::string response = "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
+
+    if (send(clientSocket, response.c_str(), response.size(), 0) == -1) {
+        std::cerr << "Failed to send HTTP 500 response to the socket" << std::endl;
+    }
+}
 
 bool ThreadWorker::handleClientInput(pollfd &pfd) {
     //printf("RECEIVE CLIENT INPUT FUNC()\n");
-    readClientInput(pfd.fd);
+    if(readClientInput(pfd.fd)){
+        return true;
+    }
 
     auto &clientBuf = clientBuffersMap[pfd.fd];
 
@@ -109,7 +118,16 @@ bool ThreadWorker::handleClientInput(pollfd &pfd) {
         return false;
     }
 
-    auto req = HttpParser::parseRequest(clientBuf);
+    httpparser::Request req;
+    try{
+        req = HttpParser::parseRequest(clientBuf);
+    }catch(...){
+        sendHTTP500Error(pfd.fd);
+        clientBuffersMap.erase(pfd.fd);
+        close(pfd.fd);
+        return true;
+    }
+
 
     clientBuffersMap.erase(pfd.fd);
 
@@ -124,6 +142,7 @@ bool ThreadWorker::handleClientInput(pollfd &pfd) {
         int clientFD = pfd.fd;
         pfd.fd = -1;
         auto *cacheElement = storage.getElement(req.uri);
+        cacheElement->incrementReadersCount();
         cacheElement->initReader(info);
         auto serverFD = HostConnector::connectToTargetHost(req);
 
@@ -138,23 +157,28 @@ bool ThreadWorker::handleClientInput(pollfd &pfd) {
     return false;
 }
 
-void ThreadWorker::readClientInput(int fd) {
+bool ThreadWorker::readClientInput(int fd) {
     char buf[CHUNK_SIZE];
     ssize_t bytesRead = recv(fd, buf, CHUNK_SIZE, 0);
     if (bytesRead < 0) {
-        //throw std::runtime_error("recv input from data");
+        clientBuffersMap.erase(fd);
+        close(fd);
+        return true;
     }
 
     auto &clientBuf = clientBuffersMap[fd];
 
     clientBuf += std::string(buf, bytesRead);
+    return false;
 }
 
 void ThreadWorker::handleFinishRead(ClientInfo *info, CacheElement *cacheElement, bool closeFD) {
     cacheElement->decrementReadersCount();
+    storage.lock();
     if (cacheElement->isReadersEmpty() && cacheElement->getStatusCode() != 200) {
         storage.clearElement(info->uri);
     }
+    storage.unlock();
     cleanClientInfo(cacheElement, info, closeFD);
 }
 
@@ -209,7 +233,13 @@ bool ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
     ssize_t bytesRead = recv(pfd.fd, buf, CHUNK_SIZE, 0);
 
     if (bytesRead < 0) {
-        fprintf(stderr, "ERROR < 0 %s\n", strerror(errno));
+        if(errno != EAGAIN){
+            fprintf(stderr, "ERROR < 0 %s\n", strerror(errno));
+            cacheElement->markFinished();
+            close(pfd.fd);
+            return true;
+        }
+        
     }
 
     cacheElement->appendData(buf, bytesRead);

@@ -9,7 +9,7 @@ CURL_OPTIONS="--http1.0 --proxy1.0 ${PROXY_HOST}:${PROXY_PORT}"
 make-request() {
     NUM=$1
 
-    time=$(curl -s -w "%{time_total}\n" -o results/result-${NUM}.zip ${CURL_OPTIONS} ${URL})
+    time=$(curl -v -s -w "%{time_total}\n" -o results/result-${NUM}.zip ${CURL_OPTIONS} ${URL})
     echo "${NUM}: ${time}s"
 }
 

@@ -40,7 +40,7 @@ private:
 
     bool handleClientReceivingResource(pollfd &pfd);
 
-    void readClientInput(int fd);
+    bool readClientInput(int fd);
 
 
     void handlePipeMessages();

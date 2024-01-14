@@ -11,17 +11,20 @@ bool CacheElement::isFinishReading(ssize_t offset) {
 }
 
 void CacheElement::markFinished() {
+    pthread_rwlock_rdlock(&mUserBufStates);
+    const int localStatusCode = HttpParser::parseStatusCode(data);
+    pthread_rwlock_unlock(&mUserBufStates);
     pthread_rwlock_wrlock(&mUserBufStates);
     finished = true;
-    statusCode = HttpParser::parseStatusCode(data);
+    statusCode = localStatusCode;
     pthread_rwlock_unlock(&mUserBufStates);
 }
+
 
 void CacheElement::initReader(ClientInfo *info) {
     pthread_rwlock_wrlock(&mUserBufStates);
     userBufStates.insert(std::make_pair(info->fd, info));
     pthread_rwlock_unlock(&mUserBufStates);
-    readersCount.fetch_add(1, std::memory_order_relaxed);
 }
 
 size_t CacheElement::readData(char *buf, size_t buf_size, ssize_t offset) {
