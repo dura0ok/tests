@@ -13,6 +13,7 @@ bool CacheElement::isFinishReading(ssize_t offset) {
 void CacheElement::markFinished() {
     pthread_rwlock_wrlock(&mUserBufStates);
     finished = true;
+    statusCode = HttpParser::parseStatusCode(data);
     pthread_rwlock_unlock(&mUserBufStates);
 }
 
@@ -47,6 +48,6 @@ void CacheElement::makeReadersReadyToWrite() {
 }
 
 int CacheElement::getStatusCode() {
-    return HttpParser::parseStatusCode(data);
+    return statusCode;
 }
 

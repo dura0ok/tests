@@ -155,7 +155,7 @@ void ThreadWorker::handleFinishRead(ClientInfo *info, CacheElement *cacheElement
     if (cacheElement->isReadersEmpty() && cacheElement->getStatusCode() != 200) {
         storage.clearElement(info->uri);
     }
-    cleanClientInfo(info, closeFD);
+    cleanClientInfo(cacheElement, info, closeFD);
 }
 
 bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
@@ -189,13 +189,15 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     return false;
 }
 
-void ThreadWorker::cleanClientInfo(ClientInfo *info, bool closeFD) {
+void ThreadWorker::cleanClientInfo(CacheElement *cacheElement, ClientInfo *info, bool closeFD) {
+    clientInfo.erase(info->fd);
     if (closeFD) {
         close(info->fd);
         fprintf(stderr, "CLOSING %d %s\n", info->fd, __func__);
+        delete info;
+    } else {
+        cacheElement->initReader(info);
     }
-    clientInfo.erase(info->fd);
-    delete info;
 }
 
 bool ThreadWorker::handleReadDataFromServer(pollfd &pfd) {

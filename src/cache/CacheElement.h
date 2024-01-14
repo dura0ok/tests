@@ -54,11 +54,11 @@ public:
     int getStatusCode();
 
 private:
-
     std::map<int, ClientInfo *> userBufStates;
     pthread_rwlock_t mData{};
     pthread_rwlock_t mUserBufStates{};
     std::string data;
-    std::atomic_size_t readersCount;
+    std::atomic_size_t readersCount = 0;
     bool finished{};
+    int statusCode = -1;
 };
