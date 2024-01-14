@@ -172,16 +172,6 @@ bool ThreadWorker::readClientInput(int fd) {
     return false;
 }
 
-void ThreadWorker::handleFinishRead(ClientInfo *info, CacheElement *cacheElement, bool closeFD) {
-    cacheElement->decrementReadersCount();
-    storage.lock();
-    if (cacheElement->isReadersEmpty() && cacheElement->getStatusCode() != 200) {
-        storage.clearElement(info->uri);
-    }
-    storage.unlock();
-    cleanClientInfo(cacheElement, info, closeFD);
-}
-
 bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     //printf("RECEIVE CLIENT FUNC()\n");
     auto &info = clientInfo.at(pfd.fd);
@@ -189,7 +179,7 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     char buf[BUFSIZ];
     auto size = cacheElement->readData(buf, BUFSIZ, info->offset);
     if (size == 0) {
-        handleFinishRead(info, cacheElement, cacheElement->isFinishReading(info->offset));
+        cleanClientInfo(cacheElement, info, cacheElement->isFinishReading(info->offset));
         return true;
     }
 
@@ -204,7 +194,7 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
         }
 
 
-        handleFinishRead(info, cacheElement, true);
+        cleanClientInfo(cacheElement, info,  true);
         return true;
     }
 
@@ -217,8 +207,18 @@ void ThreadWorker::cleanClientInfo(CacheElement *cacheElement, ClientInfo *info,
     clientInfo.erase(info->fd);
     if (closeFD) {
         close(info->fd);
+
+        storage.lock();
+        cacheElement->decrementReadersCount();
+
+        if (cacheElement->isReadersEmpty() && cacheElement->getStatusCode() != 200) {
+            storage.clearElement(info->uri);
+        }
+        storage.unlock();
+
         fprintf(stderr, "CLOSING %d %s\n", info->fd, __func__);
         delete info;
+
     } else {
         cacheElement->initReader(info);
     }
@@ -238,6 +238,8 @@ bool ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
             cacheElement->markFinished();
             close(pfd.fd);
             return true;
+        }else{
+            return false;
         }
         
     }

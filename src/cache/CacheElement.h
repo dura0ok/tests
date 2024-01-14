@@ -65,5 +65,5 @@ private:
     std::string data;
     std::atomic_size_t readersCount = 0;
     bool finished{};
-    int statusCode = -1;
+    int statusCode = 200;
 };
