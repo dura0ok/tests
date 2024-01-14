@@ -24,12 +24,12 @@ ThreadWorker::ThreadWorker(Storage &newStorage) : storage(newStorage) {
 void ThreadWorker::worker() {
     //printf("worker is started\n");
     while (true) {
-        std::cout << "Success poll ";
-        for (auto &el: fds) {
-            std::cout << el.fd << " " << el.events << " || ";
-        }
-
-        std::cout << std::endl;
+//        std::cout << "Success poll ";
+//        for (auto &el: fds) {
+//            std::cout << el.fd << " " << el.events << " || ";
+//        }
+//
+//        std::cout << std::endl;
         int pollResult = poll(fds.data(), fds.size(), -1);
 
 
@@ -171,16 +171,6 @@ bool ThreadWorker::readClientInput(int fd) {
     return false;
 }
 
-template <typename K, typename V>
-const K& findKeyByValue(const std::map<K, V>& myMap, const V& value) {
-    for (const auto& pair : myMap) {
-        if (pair.second == value) {
-            return pair.first;
-        }
-    }
-    throw std::out_of_range("Value not found in the map");
-}
-
 bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     //printf("RECEIVE CLIENT FUNC()\n");
     auto &info = clientInfo.at(pfd.fd);
@@ -196,17 +186,14 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
 
     //std::cout << "Data read from client " << pfd.fd << std::endl;
     ssize_t bytesSend = send(pfd.fd, buf, size, 0);
-
+    printf("Bytes send %zu\n", bytesSend);
     if (bytesSend == -1 || cacheElement->isFinishReading(info->offset + static_cast<ssize_t>(size))) {
         printf("RECEIVE FINISH READ TEST!!!!!!!!!!\n");
         if (bytesSend == -1) {
             fprintf(stderr, "ERROR in %s %s\n", __func__, strerror(errno));
         }
 
-        auto serverFD = findKeyByValue(serverSocketsURI, info->uri);
-        fds.erase(std::remove_if(fds.begin(), fds.end(),
-                                     [serverFD](const pollfd& p) { return p.fd == serverFD; }),
-                      fds.end());
+
         cleanClientInfo(cacheElement, info,  true);
         return true;
     }
@@ -242,6 +229,9 @@ bool ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
     auto *cacheElement = storage.getElement(uri);
 
     if (cacheElement->isReadersEmpty()){
+        fds.erase(std::remove_if(fds.begin(), fds.end(),
+                                 [pfd](const pollfd& p) { return p.fd == pfd.fd; }),
+                  fds.end());
         storage.clearElement(uri);
         return true;
     }
