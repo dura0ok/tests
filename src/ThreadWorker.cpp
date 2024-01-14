@@ -27,7 +27,6 @@ void ThreadWorker::worker() {
         std::cout << "Success poll ";
         for (auto &el: fds) {
             std::cout << el.fd << " " << el.events << " || ";
-
         }
 
         std::cout << std::endl;
@@ -172,12 +171,23 @@ bool ThreadWorker::readClientInput(int fd) {
     return false;
 }
 
+template <typename K, typename V>
+const K& findKeyByValue(const std::map<K, V>& myMap, const V& value) {
+    for (const auto& pair : myMap) {
+        if (pair.second == value) {
+            return pair.first;
+        }
+    }
+    throw std::out_of_range("Value not found in the map");
+}
+
 bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     //printf("RECEIVE CLIENT FUNC()\n");
     auto &info = clientInfo.at(pfd.fd);
     auto *cacheElement = storage.getElement(info->uri);
     char buf[BUFSIZ];
     auto size = cacheElement->readData(buf, BUFSIZ, info->offset);
+
     if (size == 0) {
         cleanClientInfo(cacheElement, info, cacheElement->isFinishReading(info->offset));
         return true;
@@ -193,7 +203,10 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
             fprintf(stderr, "ERROR in %s %s\n", __func__, strerror(errno));
         }
 
-
+        auto serverFD = findKeyByValue(serverSocketsURI, info->uri);
+        fds.erase(std::remove_if(fds.begin(), fds.end(),
+                                     [serverFD](const pollfd& p) { return p.fd == serverFD; }),
+                      fds.end());
         cleanClientInfo(cacheElement, info,  true);
         return true;
     }
@@ -205,10 +218,10 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
 
 void ThreadWorker::cleanClientInfo(CacheElement *cacheElement, ClientInfo *info, bool closeFD) {
     clientInfo.erase(info->fd);
-    if (closeFD) {
-        close(info->fd);
 
+    if (closeFD) {
         cacheElement->decrementReadersCount();
+        close(info->fd);
         storage.lock();
         if (cacheElement->isReadersEmpty() && cacheElement->getStatusCode() != 200) {
             storage.clearElement(info->uri);
