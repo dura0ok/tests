@@ -48,12 +48,7 @@ public:
     }
 
     bool isReadersEmpty() {
-        size_t expected = 0;
-        size_t tmp = 0;
-        if (readersCount.compare_exchange_strong(expected, tmp)) {
-            return true;
-        }
-        return false;
+        return readersCount.load(std::memory_order_relaxed) == 0;
     }
 
     int getStatusCode();

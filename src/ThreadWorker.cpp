@@ -208,9 +208,8 @@ void ThreadWorker::cleanClientInfo(CacheElement *cacheElement, ClientInfo *info,
     if (closeFD) {
         close(info->fd);
 
-        storage.lock();
         cacheElement->decrementReadersCount();
-
+        storage.lock();
         if (cacheElement->isReadersEmpty() && cacheElement->getStatusCode() != 200) {
             storage.clearElement(info->uri);
         }
