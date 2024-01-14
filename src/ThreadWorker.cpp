@@ -263,7 +263,7 @@ bool ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
     if (bytesRead == 0) {
         printf("MARK IS FINISHED %zu\n", cacheElement->getDataSize());
         cacheElement->markFinished();
-        serverSocketsURI.clear();
+        serverSocketsURI.erase(pfd.fd);
         fprintf(stderr, "CLOSING %d %s\n", pfd.fd, __func__);
         close(pfd.fd);
         return true;
