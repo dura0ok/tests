@@ -24,12 +24,12 @@ ThreadWorker::ThreadWorker(Storage &newStorage) : storage(newStorage) {
 void ThreadWorker::worker() {
     //printf("worker is started\n");
     while (true) {
-//        std::cout << "Success poll ";
-//        for (auto &el: fds) {
-//            std::cout << el.fd << " " << el.events << " || ";
-//        }
-//
-//        std::cout << std::endl;
+        std::cout << "Success poll ";
+        for (auto &el: fds) {
+            std::cout << el.fd << " " << el.events << " || ";
+        }
+
+        std::cout << std::endl;
         int pollResult = poll(fds.data(), fds.size(), -1);
 
 
@@ -151,6 +151,9 @@ bool ThreadWorker::handleClientInput(pollfd &pfd) {
         clientInfo.erase(clientFD);
         return true;
     }
+    auto cacheElement = storage.getElement(req.uri);
+    cacheElement->incrementReadersCount();
+    printf("Increment readers %s\n", __func__ );
 
     pfd.events = POLLOUT;
     return false;
@@ -186,7 +189,7 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
 
     //std::cout << "Data read from client " << pfd.fd << std::endl;
     ssize_t bytesSend = send(pfd.fd, buf, size, 0);
-    printf("Bytes send %zu\n", bytesSend);
+    //printf("Bytes send %zu\n", bytesSend);
     if (bytesSend == -1 || cacheElement->isFinishReading(info->offset + static_cast<ssize_t>(size))) {
         printf("RECEIVE FINISH READ TEST!!!!!!!!!!\n");
         if (bytesSend == -1) {
@@ -207,6 +210,7 @@ void ThreadWorker::cleanClientInfo(CacheElement *cacheElement, ClientInfo *info,
     clientInfo.erase(info->fd);
 
     if (closeFD) {
+        printf("Decrement readers %s\n", __func__ );
         cacheElement->decrementReadersCount();
         close(info->fd);
         storage.lock();
@@ -229,9 +233,7 @@ bool ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
     auto *cacheElement = storage.getElement(uri);
 
     if (cacheElement->isReadersEmpty()){
-        fds.erase(std::remove_if(fds.begin(), fds.end(),
-                                 [pfd](const pollfd& p) { return p.fd == pfd.fd; }),
-                  fds.end());
+        close(pfd.fd);
         storage.clearElement(uri);
         return true;
     }
