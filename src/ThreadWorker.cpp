@@ -24,12 +24,12 @@ ThreadWorker::ThreadWorker(Storage &newStorage) : storage(newStorage) {
 void ThreadWorker::worker() {
     //printf("worker is started\n");
     while (true) {
-        std::cout << "Success poll ";
-        for (auto &el: fds) {
-            std::cout << el.fd << " " << el.events << " || ";
-        }
-
-        std::cout << std::endl;
+//        std::cout << "Success poll ";
+//        for (auto &el: fds) {
+//            std::cout << el.fd << " " << el.events << " || ";
+//        }
+//
+//        std::cout << std::endl;
         int pollResult = poll(fds.data(), fds.size(), -1);
 
 
@@ -224,7 +224,7 @@ bool ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
     auto uri = serverSocketsURI.at(pfd.fd);
     auto *cacheElement = storage.getElement(uri);
 
-    if (storage.clearElement(uri)){
+    if (storage.clearElementForServer(uri)){
         close(pfd.fd);
         serverSocketsURI.erase(pfd.fd);
         return true;

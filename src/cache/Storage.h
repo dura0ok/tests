@@ -23,9 +23,12 @@ public:
 
     bool clearElement(const std::string &key);
 
+    bool clearElementForServer(const std::string &key);
+
 private:
     std::map<std::string, std::unique_ptr<CacheElement>> dataMap;
     mutable pthread_rwlock_t dataMapLock;
 
     CacheElement *getElementNoBlock(const std::string &key);
+
 };
