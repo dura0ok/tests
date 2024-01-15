@@ -134,23 +134,21 @@ bool ThreadWorker::handleClientInput(pollfd &pfd) {
     info->uri = req.uri;
     info->fd = pfd.fd;
     info->offset = 0;
-    clientInfo.insert(std::make_pair(pfd.fd, info));
+
     auto [res, cacheElement] = storage.initElement(req.uri);
     if (res) {
-        int clientFD = pfd.fd;
-        pfd.fd = -1;
-
-        cacheElement->initReader(info);
         cacheElement->incrementReadersCount();
+        cacheElement->initReader(info);
+
         auto serverFD = HostConnector::connectToTargetHost(req);
 
         printf("ADD server socket %d\n", serverFD);
         storeClientConnection(serverFD);
         serverSocketsURI.insert(std::make_pair(serverFD, req.uri));
-        clientInfo.erase(clientFD);
         return true;
     }
 
+    clientInfo.insert(std::make_pair(pfd.fd, info));
 
     printf("Increment readers %s\n", __func__ );
 
