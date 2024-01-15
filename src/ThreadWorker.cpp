@@ -135,14 +135,13 @@ bool ThreadWorker::handleClientInput(pollfd &pfd) {
     info->fd = pfd.fd;
     info->offset = 0;
     clientInfo.insert(std::make_pair(pfd.fd, info));
-
-    if (!storage.containsKey(req.uri)) {
-        storage.initElement(req.uri);
+    auto [res, cacheElement] = storage.initElement(req.uri);
+    if (res) {
         int clientFD = pfd.fd;
         pfd.fd = -1;
-        auto *cacheElement = storage.getElement(req.uri);
-        cacheElement->incrementReadersCount();
+
         cacheElement->initReader(info);
+        cacheElement->incrementReadersCount();
         auto serverFD = HostConnector::connectToTargetHost(req);
 
         printf("ADD server socket %d\n", serverFD);
@@ -151,8 +150,8 @@ bool ThreadWorker::handleClientInput(pollfd &pfd) {
         clientInfo.erase(clientFD);
         return true;
     }
-    auto cacheElement = storage.getElement(req.uri);
-    cacheElement->incrementReadersCount();
+
+
     printf("Increment readers %s\n", __func__ );
 
     pfd.events = POLLOUT;

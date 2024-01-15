@@ -19,11 +19,12 @@ public:
 
     [[nodiscard]] bool containsKey(const std::string &key) const;
 
-    void initElement(const std::string &key);
+    std::pair<bool, CacheElement *> initElement(const std::string &key);
 
     bool clearElement(const std::string &key);
 
 private:
     std::map<std::string, std::unique_ptr<CacheElement>> dataMap;
     mutable pthread_rwlock_t dataMapLock;
+
 };

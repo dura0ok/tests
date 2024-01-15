@@ -8,12 +8,21 @@ CacheElement *Storage::getElement(const std::string &key) {
     return result;
 }
 
-void Storage::initElement(const std::string &key) {
+std::pair<bool, CacheElement *> Storage::initElement(const std::string &key) {
+    CacheElement *res;
+    bool isNew;
     pthread_rwlock_wrlock(&dataMapLock);
-    dataMap.emplace(key, std::make_unique<CacheElement>());
+    auto it = dataMap.find(key);
+    if(it != dataMap.end()){
+        res = it->second.get();
+        isNew = false;
+    }else{
+        res = dataMap.emplace(key, std::make_unique<CacheElement>()).first->second.get();
+        isNew = true;
+    }
     pthread_rwlock_unlock(&dataMapLock);
+    return std::make_pair(isNew, res);
 }
-
 
 bool Storage::containsKey(const std::string &key) const {
     pthread_rwlock_rdlock(&dataMapLock);
