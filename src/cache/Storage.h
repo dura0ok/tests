@@ -27,4 +27,5 @@ private:
     std::map<std::string, std::unique_ptr<CacheElement>> dataMap;
     mutable pthread_rwlock_t dataMapLock;
 
+    CacheElement *getElementNoBlock(const std::string &key);
 };

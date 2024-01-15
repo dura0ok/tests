@@ -2,10 +2,14 @@
 
 CacheElement *Storage::getElement(const std::string &key) {
     pthread_rwlock_rdlock(&dataMapLock);
-    auto it = dataMap.find(key);
-    CacheElement *result = (it != dataMap.end()) ? it->second.get() : nullptr;
+    auto result = getElementNoBlock(key);
     pthread_rwlock_unlock(&dataMapLock);
     return result;
+}
+
+CacheElement* Storage::getElementNoBlock(const std::string &key){
+    auto it = dataMap.find(key);
+    return (it != dataMap.end()) ? it->second.get() : nullptr;
 }
 
 std::pair<bool, CacheElement *> Storage::initElement(const std::string &key) {
@@ -34,7 +38,7 @@ bool Storage::containsKey(const std::string &key) const {
 bool Storage::clearElement(const std::string &key) {
     pthread_rwlock_wrlock(&dataMapLock);
     bool ret = false;
-    auto cacheElement = getElement(key);
+    auto cacheElement = getElementNoBlock(key);
     if (cacheElement->isReadersEmpty() && cacheElement->getStatusCode() != 200) {
         dataMap.erase(key);
         ret = true;

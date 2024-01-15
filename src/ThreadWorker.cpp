@@ -139,7 +139,7 @@ bool ThreadWorker::handleClientInput(pollfd &pfd) {
     cacheElement->incrementReadersCount();
     printf("Increment readers %s\n", __func__ );
     if (res) {
-        cacheElement->initReader(info);
+            cacheElement->initReader(info);
 
         auto serverFD = HostConnector::connectToTargetHost(req);
 
