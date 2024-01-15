@@ -5,7 +5,7 @@
 bool CacheElement::isFinishReading(ssize_t offset) {
     pthread_rwlock_rdlock(&mData);
     ssize_t size = data.size();
-    auto localFinished = finished;
+    auto localFinished = isFinished();
     pthread_rwlock_unlock(&mData);
     return localFinished && (offset == size);
 }
@@ -52,5 +52,9 @@ void CacheElement::makeReadersReadyToWrite() {
 
 int CacheElement::getStatusCode() {
     return statusCode;
+}
+
+bool CacheElement::isFinished() const {
+    return finished;
 }
 

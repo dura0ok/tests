@@ -39,7 +39,7 @@ bool Storage::clearElement(const std::string &key) {
     pthread_rwlock_wrlock(&dataMapLock);
     bool ret = false;
     auto cacheElement = getElementNoBlock(key);
-    if (cacheElement->isReadersEmpty() && cacheElement->getStatusCode() != 200) {
+    if (cacheElement->isReadersEmpty() && cacheElement->getStatusCode() != 200 && cacheElement->isFinished()) {
         dataMap.erase(key);
         ret = true;
     }

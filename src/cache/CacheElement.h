@@ -51,8 +51,9 @@ public:
         return readersCount.load(std::memory_order_relaxed) == 0;
     }
 
-    int getStatusCode();
 
+    int getStatusCode();
+    [[nodiscard]] bool isFinished() const;
 private:
     std::map<int, ClientInfo *> userBufStates;
     pthread_rwlock_t mData{};
@@ -60,5 +61,8 @@ private:
     std::string data;
     std::atomic_size_t readersCount = 0;
     bool finished{};
+
+
+private:
     int statusCode = -1;
 };
