@@ -136,8 +136,9 @@ bool ThreadWorker::handleClientInput(pollfd &pfd) {
     info->offset = 0;
 
     auto [res, cacheElement] = storage.initElement(req.uri);
+    cacheElement->incrementReadersCount();
+    printf("Increment readers %s\n", __func__ );
     if (res) {
-        cacheElement->incrementReadersCount();
         cacheElement->initReader(info);
 
         auto serverFD = HostConnector::connectToTargetHost(req);
@@ -149,8 +150,6 @@ bool ThreadWorker::handleClientInput(pollfd &pfd) {
     }
 
     clientInfo.insert(std::make_pair(pfd.fd, info));
-
-    printf("Increment readers %s\n", __func__ );
 
     pfd.events = POLLOUT;
     return false;
