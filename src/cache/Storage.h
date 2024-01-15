@@ -21,18 +21,9 @@ public:
 
     void initElement(const std::string &key);
 
-    void clearElement(const std::string &key);
-
-    void lock(){
-        pthread_mutex_lock(&mutex);
-    }
-
-    void unlock(){
-        pthread_mutex_unlock(&mutex);
-    }
+    bool clearElement(const std::string &key);
 
 private:
     std::map<std::string, std::unique_ptr<CacheElement>> dataMap;
     mutable pthread_rwlock_t dataMapLock;
-    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 };

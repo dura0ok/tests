@@ -213,11 +213,7 @@ void ThreadWorker::cleanClientInfo(CacheElement *cacheElement, ClientInfo *info,
         printf("Decrement readers %s\n", __func__ );
         cacheElement->decrementReadersCount();
         close(info->fd);
-        storage.lock();
-        if (cacheElement->isReadersEmpty() && cacheElement->getStatusCode() != 200) {
-            storage.clearElement(info->uri);
-        }
-        storage.unlock();
+        storage.clearElement(info->uri);
 
         fprintf(stderr, "CLOSING %d %s\n", info->fd, __func__);
         delete info;
@@ -232,9 +228,8 @@ bool ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
     auto uri = serverSocketsURI.at(pfd.fd);
     auto *cacheElement = storage.getElement(uri);
 
-    if (cacheElement->isReadersEmpty()){
+    if (storage.clearElement(uri)){
         close(pfd.fd);
-        storage.clearElement(uri);
         serverSocketsURI.erase(pfd.fd);
         return true;
     }

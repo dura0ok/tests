@@ -22,8 +22,15 @@ bool Storage::containsKey(const std::string &key) const {
     return result;
 }
 
-void Storage::clearElement(const std::string &key) {
+bool Storage::clearElement(const std::string &key) {
     pthread_rwlock_wrlock(&dataMapLock);
-    dataMap.erase(key);
+    bool ret = false;
+    auto cacheElement = getElement(key);
+    if (cacheElement->isReadersEmpty() && cacheElement->getStatusCode() != 200) {
+        dataMap.erase(key);
+        ret = true;
+    }
+
     pthread_rwlock_unlock(&dataMapLock);
+    return ret;
 }
