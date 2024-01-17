@@ -24,12 +24,12 @@ ThreadWorker::ThreadWorker(Storage &newStorage) : storage(newStorage) {
 void ThreadWorker::worker() {
     //printf("worker is started\n");
     while (true) {
-//        std::cout << "Success poll ";
-//        for (auto &el: fds) {
-//            std::cout << el.fd << " " << el.events << " || ";
-//        }
-//
-//        std::cout << std::endl;
+        std::cout << "Success poll ";
+        for (auto &el: fds) {
+            std::cout << el.fd << " " << el.events << " || ";
+        }
+
+        std::cout << std::endl;
         int pollResult = poll(fds.data(), fds.size(), -1);
 
 
