@@ -186,7 +186,7 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     //std::cout << "Data read from client " << pfd.fd << std::endl;
     ssize_t bytesSend = send(pfd.fd, buf, size, 0);
     //printf("Bytes send %zu\n", bytesSend);
-    if (bytesSend == -1 || cacheElement->isFinishReading(info->offset + static_cast<ssize_t>(size))) {
+    if (bytesSend == -1 || cacheElement->isFinishReading(info->offset + static_cast<ssize_t>(bytesSend))) {
         printf("RECEIVE FINISH READ TEST!!!!!!!!!!\n");
         if (bytesSend == -1) {
             fprintf(stderr, "ERROR in %s %s\n", __func__, strerror(errno));
@@ -197,7 +197,7 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
         return true;
     }
 
-    info->offset += static_cast<ssize_t>(size);
+    info->offset += static_cast<ssize_t>(bytesSend);
 
     return false;
 }
