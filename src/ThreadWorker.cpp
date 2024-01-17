@@ -247,9 +247,6 @@ bool ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
         
     }
 
-    cacheElement->appendData(buf, bytesRead);
-    cacheElement->makeReadersReadyToWrite();
-
 
     if (bytesRead == 0) {
         printf("MARK IS FINISHED %zu\n", cacheElement->getDataSize());
@@ -261,6 +258,8 @@ bool ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
     }
 
     //printf("Bytes read %zd\n", bytesRead);
+    cacheElement->appendData(buf, bytesRead);
+    cacheElement->makeReadersReadyToWrite();
     return false;
 }
 
