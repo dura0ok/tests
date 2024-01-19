@@ -22,16 +22,15 @@ ThreadWorker::ThreadWorker(Storage &newStorage) : storage(newStorage) {
 }
 
 void ThreadWorker::worker() {
-    //printf("worker is started\n");
+    printf("worker is started\n");
     while (true) {
-        std::cout << "Success poll ";
+        int pollResult = poll(fds.data(), fds.size(), -1);
+        std::cout << "Success poll " << pollResult << " ";
         for (auto &el: fds) {
-            std::cout << el.fd << " " << el.events << " || ";
+            std::cout << el.fd << " " << el.events << " " << el.revents << " || ";
         }
 
         std::cout << std::endl;
-        int pollResult = poll(fds.data(), fds.size(), -1);
-
 
         if (pollResult == -1) {
             throw std::runtime_error("poll error");
@@ -42,10 +41,12 @@ void ThreadWorker::worker() {
         for (ssize_t i = 2; i < static_cast<ssize_t>(fds.size()); i++) {
             auto &pfd = fds[i];
             if (serverSocketsURI.count(pfd.fd)) {
-                if (handleReadDataFromServer(pfd)) {
-                    eraseFDByIndex(i);
+                if (pfd.revents & POLLIN) {
+                    if (handleReadDataFromServer(pfd)) {
+                        eraseFDByIndex(i);
+                    }
+                    continue;
                 }
-                continue;
             }
 
             if (handleClientConnection(pfd)) {

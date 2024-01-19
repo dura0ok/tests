@@ -11,20 +11,20 @@ bool CacheElement::isFinishReading(ssize_t offset) {
 }
 
 void CacheElement::markFinished() {
-    pthread_rwlock_rdlock(&mUserBufStates);
+    pthread_rwlock_rdlock(&mData);
     const int localStatusCode = HttpParser::parseStatusCode(data);
-    pthread_rwlock_unlock(&mUserBufStates);
-    pthread_rwlock_wrlock(&mUserBufStates);
+    pthread_rwlock_unlock(&mData);
+    pthread_rwlock_wrlock(&mData);
     finished = true;
     statusCode = localStatusCode;
-    pthread_rwlock_unlock(&mUserBufStates);
+    pthread_rwlock_unlock(&mData);
 }
 
 
 void CacheElement::initReader(ClientInfo *info) {
-    pthread_rwlock_wrlock(&mUserBufStates);
+    pthread_mutex_lock(&mUserBufStates);
     userBufStates.insert(std::make_pair(info->fd, info));
-    pthread_rwlock_unlock(&mUserBufStates);
+    pthread_mutex_unlock(&mUserBufStates);
 }
 
 size_t CacheElement::readData(char *buf, size_t buf_size, ssize_t offset) {
@@ -42,15 +42,15 @@ void CacheElement::appendData(const char *buf, size_t size) {
 }
 
 void CacheElement::makeReadersReadyToWrite() {
-    pthread_rwlock_wrlock(&mUserBufStates);
+    pthread_mutex_lock(&mUserBufStates);
     for (auto &userBufState: userBufStates) {
         pool->AddClientInfoToWorker(userBufState.second);
     }
     userBufStates.clear();
-    pthread_rwlock_unlock(&mUserBufStates);
+    pthread_mutex_unlock(&mUserBufStates);
 }
 
-int CacheElement::getStatusCode() {
+int CacheElement::getStatusCode() const {
     return statusCode;
 }
 

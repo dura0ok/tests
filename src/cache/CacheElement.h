@@ -13,12 +13,12 @@ class CacheElement {
 public:
     CacheElement() {
         pthread_rwlock_init(&mData, nullptr);
-        pthread_rwlock_init(&mUserBufStates, nullptr);
+        pthread_mutex_init(&mUserBufStates, nullptr);
     }
 
     ~CacheElement() {
         pthread_rwlock_destroy(&mData);
-        pthread_rwlock_destroy(&mUserBufStates);
+        pthread_mutex_destroy(&mUserBufStates);
     }
 
 
@@ -52,12 +52,12 @@ public:
     }
 
 
-    int getStatusCode();
+    [[nodiscard]] int getStatusCode() const;
     [[nodiscard]] bool isFinished() const;
 private:
     std::map<int, ClientInfo *> userBufStates;
     pthread_rwlock_t mData{};
-    pthread_rwlock_t mUserBufStates{};
+    pthread_mutex_t mUserBufStates = PTHREAD_MUTEX_INITIALIZER;
     std::string data;
     std::atomic_size_t readersCount = 0;
     bool finished{};
