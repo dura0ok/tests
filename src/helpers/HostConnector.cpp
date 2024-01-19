@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <csignal>
+#include <thread>
 #include "HostConnector.h"
 
 int HostConnector::connectToTargetHost(const httpparser::Request &req) {
@@ -15,20 +16,27 @@ int HostConnector::connectToTargetHost(const httpparser::Request &req) {
 }
 
 addrinfo *HostConnector::getAddressInfo(const std::string &hostname, const std::string &port) {
-
     struct addrinfo hints{}, *res;
-    std::vector<addrinfo> result;
+    int attempts = 0;
+    const int maxAttempts = 10;
 
     std::memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
 
-    if (getaddrinfo(hostname.c_str(), port.c_str(), &hints, &res) != 0) {
-        throw std::runtime_error("error in resolve host");
+    while (attempts < maxAttempts) {
+        if (getaddrinfo(hostname.c_str(), port.c_str(), &hints, &res) != 0) {
+            std::cerr << "Error in resolving host. Retrying..." << std::endl;
+            attempts++;
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        } else {
+            return res;
+        }
     }
 
-    return res;
+    throw std::runtime_error("Failed to resolve host after multiple attempts");
 }
+
 
 int HostConnector::createConnectionToTargetHost(addrinfo *addrInfo) {
     int clientSocket = socket(addrInfo->ai_family, addrInfo->ai_socktype, addrInfo->ai_protocol);

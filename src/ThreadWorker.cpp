@@ -23,14 +23,17 @@ ThreadWorker::ThreadWorker(Storage &newStorage) : storage(newStorage) {
 
 void ThreadWorker::worker() {
     printf("worker is started\n");
+    std::mutex mutex; // Declare a mutex
     while (true) {
         int pollResult = poll(fds.data(), fds.size(), -1);
-        std::cout << "Success poll " << pollResult << " ";
-        for (auto &el: fds) {
-            std::cout << el.fd << " " << el.events << " " << el.revents << " || ";
-        }
-
-        std::cout << std::endl;
+//        mutex.lock();
+//        std::cout << "Thread ID: " << std::this_thread::get_id() << ", Poll result: " <<  pollResult << " ";
+//        for (auto &el: fds) {
+//            std::cout << el.fd << " " << el.events << " " << el.revents << " || ";
+//        }
+//
+//        std::cout << std::endl;
+//        mutex.unlock();
 
         if (pollResult == -1) {
             throw std::runtime_error("poll error");
