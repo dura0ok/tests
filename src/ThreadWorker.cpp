@@ -43,18 +43,15 @@ void ThreadWorker::worker() {
 
         for (ssize_t i = 2; i < static_cast<ssize_t>(fds.size()); i++) {
             auto &pfd = fds[i];
-            if (serverSocketsURI.count(pfd.fd)) {
-                if (pfd.revents & POLLIN) {
-                    if (handleReadDataFromServer(pfd)) {
+            if ((pfd.revents & POLLIN) == POLLIN && serverSocketsURI.count(pfd.fd) && handleReadDataFromServer(pfd)) {
                         eraseFDByIndex(i);
-                    }
-                    continue;
-                }
+
             }
 
             if (handleClientConnection(pfd)) {
                 eraseFDByIndex(i);
             }
+            pfd.revents = 0;
         }
     }
 }
@@ -273,12 +270,14 @@ void ThreadWorker::handlePipeMessages() {
     if (fds[0].revents & POLLIN) {
         while (read(addPipeFd[0], &fd, sizeof(fd)) != -1) {
             storeClientConnection(fd);
+            fds[0].revents = 0;
         }
     }
 
     if (fds[1].revents & POLLIN) {
         while (read(transferPipeFd[0], &info, sizeof(ClientInfo *)) != -1) {
             storeInfo(info);
+            fds[1].revents = 0;
         }
     }
 }

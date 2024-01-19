@@ -3,7 +3,7 @@
 PROXY_HOST="localhost"
 PROXY_PORT="8080"
 URL="http://xcal1.vodafone.co.uk/10MB.zip"
-REQUESTS=5
+REQUESTS=512
 CURL_OPTIONS="--http1.0 --proxy1.0 ${PROXY_HOST}:${PROXY_PORT}"
 
 make-request() {
