@@ -95,7 +95,10 @@ void ThreadWorker::transferInfo(ClientInfo *info) {
 
 void ThreadWorker::storeInfo(ClientInfo *info) {
     storeClientConnection(info->fd, POLLOUT);
-    clientInfo.insert(std::make_pair(info->fd, info));
+    auto res = clientInfo.insert(std::make_pair(info->fd, info));
+    if(!res.second){
+        throw std::runtime_error("map inserted failed");
+    }
 }
 
 void sendHTTP500Error(int clientSocket) {
@@ -150,7 +153,10 @@ bool ThreadWorker::handleClientInput(pollfd &pfd) {
         return true;
     }
 
-    clientInfo.insert(std::make_pair(pfd.fd, info));
+    auto insertedResult = clientInfo.insert(std::make_pair(pfd.fd, info));
+    if(!insertedResult.second){
+        throw std::runtime_error("map inserted failed");
+    }
 
     pfd.events = POLLOUT;
     return false;

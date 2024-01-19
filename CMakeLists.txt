@@ -10,6 +10,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 add_compile_options(-ggdb3 -O0 -Wall -Wextra -Werror -Wshadow -Wold-style-cast -Wcast-align -Wunused -Woverloaded-virtual -Wpedantic)
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
+file(GLOB_RECURSE SOURCES "src/*.h")
 
 add_executable(http_proxy_v2 ${SOURCES}
         src/Config.h
