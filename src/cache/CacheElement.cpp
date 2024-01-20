@@ -50,7 +50,6 @@ void CacheElement::appendData(const char *buf, size_t size) {
 }
 
 void CacheElement::makeReadersReadyToWrite() {
-    printf("%s\n", __func__ );
     pthread_mutex_lock(&mUserBufStates);
     for (auto &userBufState: userBufStates) {
         pool->AddClientInfoToWorker(userBufState.second);

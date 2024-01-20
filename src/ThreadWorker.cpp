@@ -25,14 +25,14 @@ void ThreadWorker::worker() {
     printf("worker is started\n");
     std::mutex mutex;
     while (true) {
-//        mutex.lock();
-//        std::cout << "Thread ID: " << std::this_thread::get_id() << ", Poll result: " <<  "asdasd || " << " ";
-//        for (auto &el: fds) {
-//            std::cout << el.fd << " " << el.events << " " << el.revents << " || ";
-//        }
-//
-//        std::cout << std::endl;
-//        mutex.unlock();
+        mutex.lock();
+        std::cout << "Thread ID: " << std::this_thread::get_id() << ", Poll result: " <<  "asdasd || " << " ";
+        for (auto &el: fds) {
+            std::cout << el.fd << " " << el.events << " " << el.revents << " || ";
+        }
+
+        std::cout << std::endl;
+        mutex.unlock();
 
         int pollResult = poll(fds.data(), fds.size(), -1);
 
@@ -238,9 +238,7 @@ bool ThreadWorker::cleanClientInfo(CacheElement *cacheElement, ClientInfo *info,
 }
 
 bool ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
-    //printf("SERVER DOWNLOAD\n");
     auto uri = serverSocketsURI.at(pfd.fd);
-    //std::cerr << "URI " << uri << std::endl;
     auto *cacheElement = storage.getElement(uri);
 
     if (storage.clearElementForServer(uri)){
@@ -249,37 +247,32 @@ bool ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
         return true;
     }
 
-    char buf[CHUNK_SIZE] = {'\0'};
-    ssize_t bytesRead = recv(pfd.fd, buf, CHUNK_SIZE, 0);
+    do {
+        ssize_t bytesRead = recv(pfd.fd, sendBuf, CHUNK_SIZE, 0);
+        if (bytesRead < 0) {
+            if(errno != EAGAIN){
+                fprintf(stderr, "ERROR < 0 %s\n", strerror(errno));
+                cacheElement->markFinished();
+                close(pfd.fd);
+                return true;
+            }else{
+                return false;
+            }
+
+        }
 
 
-
-    if (bytesRead < 0) {
-        if(errno != EAGAIN){
-            fprintf(stderr, "ERROR < 0 %s\n", strerror(errno));
+        if (bytesRead == 0) {
+            printf("MARK IS FINISHED %zu\n", cacheElement->getDataSize());
             cacheElement->markFinished();
+            serverSocketsURI.erase(pfd.fd);
+            fprintf(stderr, "CLOSING %d %s\n", pfd.fd, __func__);
             close(pfd.fd);
             return true;
-        }else{
-            return false;
         }
-        
-    }
-
-
-    if (bytesRead == 0) {
-        printf("MARK IS FINISHED %zu\n", cacheElement->getDataSize());
-        cacheElement->markFinished();
-        serverSocketsURI.erase(pfd.fd);
-        fprintf(stderr, "CLOSING %d %s\n", pfd.fd, __func__);
-        close(pfd.fd);
-        return true;
-    }
-
-    //printf("Bytes read %zd\n", bytesRead);
-    cacheElement->appendData(buf, bytesRead);
-    cacheElement->makeReadersReadyToWrite();
-    return false;
+        cacheElement->appendData(sendBuf, bytesRead);
+        cacheElement->makeReadersReadyToWrite();
+    } while (true);
 }
 
 void ThreadWorker::handlePipeMessages() {
