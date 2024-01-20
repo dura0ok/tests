@@ -247,7 +247,7 @@ bool ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
         return true;
     }
 
-    do {
+    for(size_t i = 0; i < 5; i++){
         ssize_t bytesRead = recv(pfd.fd, sendBuf, CHUNK_SIZE, 0);
         if (bytesRead < 0) {
             if(errno != EAGAIN){
@@ -270,9 +270,11 @@ bool ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
             close(pfd.fd);
             return true;
         }
+        printf("BYTES READ %zu\n", bytesRead);
         cacheElement->appendData(sendBuf, bytesRead);
         cacheElement->makeReadersReadyToWrite();
-    } while (true);
+    }
+    return false;
 }
 
 void ThreadWorker::handlePipeMessages() {
