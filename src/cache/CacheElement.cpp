@@ -4,7 +4,7 @@
 
 bool CacheElement::isFinishReading(ssize_t offset) {
     pthread_rwlock_rdlock(&mData);
-    ssize_t size = data.size();
+    auto size = static_cast<ssize_t>(data.size());
     auto localFinished = isFinished();
     pthread_rwlock_unlock(&mData);
     return localFinished && (offset >= size);

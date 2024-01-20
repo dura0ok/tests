@@ -25,14 +25,14 @@ void ThreadWorker::worker() {
     printf("worker is started\n");
     std::mutex mutex;
     while (true) {
-        mutex.lock();
-        std::cout << "Thread ID: " << std::this_thread::get_id() << ", Poll result: " <<  "asdasd || " << " ";
-        for (auto &el: fds) {
-            std::cout << el.fd << " " << el.events << " " << el.revents << " || ";
-        }
-
-        std::cout << std::endl;
-        mutex.unlock();
+//        mutex.lock();
+//        std::cout << "Thread ID: " << std::this_thread::get_id() << ", Poll result: " <<  "asdasd || " << " ";
+//        for (auto &el: fds) {
+//            std::cout << el.fd << " " << el.events << " " << el.revents << " || ";
+//        }
+//
+//        std::cout << std::endl;
+//        mutex.unlock();
 
         int pollResult = poll(fds.data(), fds.size(), -1);
 
@@ -96,6 +96,7 @@ void ThreadWorker::transferInfo(ClientInfo *info) {
 }
 
 void ThreadWorker::storeInfo(ClientInfo *info) {
+    printf("%s %d\n", __func__ , info->fd);
     storeClientConnection(info->fd, POLLOUT);
     auto res = clientInfo.insert(std::make_pair(info->fd, info));
     if(!res.second){
@@ -145,6 +146,7 @@ bool ThreadWorker::handleClientInput(pollfd &pfd) {
     cacheElement->incrementReadersCount();
     printf("Increment readers %s\n", __func__ );
     if (res) {
+        printf("ASDD!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
         cacheElement->initReader(info);
 
         auto serverFD = HostConnector::connectToTargetHost(req);
@@ -183,29 +185,36 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     //printf("RECEIVE CLIENT FUNC()\n");
     auto &info = clientInfo.at(pfd.fd);
     auto *cacheElement = storage.getElement(info->uri);
-    char buf[BUFSIZ];
-    auto size = cacheElement->readData(buf, BUFSIZ, info->offset);
 
-    if (size == 0) {
-        return cleanClientInfo(cacheElement, info, cacheElement->isFinishReading(info->offset));
-    }
+    do{
+        auto size = static_cast<ssize_t>(cacheElement->readData(sendBuf, BUFSIZ, info->offset));
 
-    //std::cout << "Data read from client " << pfd.fd << std::endl;
-    ssize_t bytesSend = send(pfd.fd, buf, size, 0);
-    //printf("Bytes send %zu\n", bytesSend);
-    if (bytesSend == -1 || cacheElement->isFinishReading(info->offset + static_cast<ssize_t>(bytesSend))) {
-        printf("RECEIVE FINISH READ TEST!!!!!!!!!!\n");
-        if (bytesSend == -1) {
-            fprintf(stderr, "ERROR in %s %s\n", __func__, strerror(errno));
+        if (size == 0) {
+            return cleanClientInfo(cacheElement, info, cacheElement->isFinishReading(info->offset));
         }
 
+        ssize_t bytesSend = send(pfd.fd, sendBuf, size, 0);
 
-        return cleanClientInfo(cacheElement, info,  true);
-    }
+        if(bytesSend == -1){
+            if(errno == EAGAIN){
+                bytesSend = 0;
+            }else{
+                fprintf(stderr, "ERROR in %s %s\n", __func__, strerror(errno));
+                return cleanClientInfo(cacheElement, info, true);
+            }
+        }
 
-    info->offset += static_cast<ssize_t>(bytesSend);
+        info->offset += static_cast<ssize_t>(bytesSend);
 
-    return false;
+        if(bytesSend < size){
+            if(cleanClientInfo(cacheElement, info, false)){
+                return true;
+            }
+            return false;
+        }
+    } while (!cacheElement->isFinishReading(info->offset));
+    printf("RECEIVE FINISH READ TEST!!!!!!!!!!\n");
+    return cleanClientInfo(cacheElement, info, true);
 }
 
 bool ThreadWorker::cleanClientInfo(CacheElement *cacheElement, ClientInfo *info, bool closeFD) {
@@ -231,7 +240,7 @@ bool ThreadWorker::cleanClientInfo(CacheElement *cacheElement, ClientInfo *info,
 bool ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
     //printf("SERVER DOWNLOAD\n");
     auto uri = serverSocketsURI.at(pfd.fd);
-    std::cerr << "URI " << uri << std::endl;
+    //std::cerr << "URI " << uri << std::endl;
     auto *cacheElement = storage.getElement(uri);
 
     if (storage.clearElementForServer(uri)){
@@ -279,15 +288,15 @@ void ThreadWorker::handlePipeMessages() {
     if (fds[0].revents & POLLIN) {
         while (read(addPipeFd[0], &fd, sizeof(fd)) != -1) {
             storeClientConnection(fd);
-            fds[0].revents = 0;
         }
+        fds[0].revents = 0;
     }
 
     if (fds[1].revents & POLLIN) {
         while (read(transferPipeFd[0], &info, sizeof(ClientInfo *)) != -1) {
             storeInfo(info);
-            fds[1].revents = 0;
         }
+        fds[1].revents = 0;
     }
 }
 

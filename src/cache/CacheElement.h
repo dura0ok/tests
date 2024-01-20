@@ -62,7 +62,6 @@ private:
     std::atomic_size_t readersCount = 0;
     bool finished{};
 
-
 private:
     int statusCode = -1;
 };

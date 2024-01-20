@@ -8,6 +8,8 @@
 #include "helpers/HttpParser.h"
 #include "ClientInfo.h"
 
+constexpr inline size_t WORKER_BUF_SIZE = BUFSIZ * BUFSIZ;
+
 class ThreadWorker {
 public:
     explicit ThreadWorker(Storage &storage);
@@ -54,5 +56,6 @@ private:
 
     bool cleanClientInfo(CacheElement *cacheElement, ClientInfo *info, bool closeFD);
 
-    void handleFinishRead(ClientInfo *info, CacheElement *cacheElement, bool b);
+   // void handleFinishRead(ClientInfo *info, CacheElement *cacheElement, bool b);
+    char sendBuf[WORKER_BUF_SIZE];
 };
