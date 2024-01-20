@@ -7,7 +7,7 @@ bool CacheElement::isFinishReading(ssize_t offset) {
     ssize_t size = data.size();
     auto localFinished = isFinished();
     pthread_rwlock_unlock(&mData);
-    return localFinished && (offset == size);
+    return localFinished && (offset >= size);
 }
 
 void CacheElement::markFinished() {

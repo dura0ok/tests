@@ -44,8 +44,8 @@ void ThreadWorker::worker() {
         for (ssize_t i = 2; i < static_cast<ssize_t>(fds.size()); i++) {
             auto &pfd = fds[i];
             if ((pfd.revents & POLLIN) == POLLIN && serverSocketsURI.count(pfd.fd) && handleReadDataFromServer(pfd)) {
-                        eraseFDByIndex(i);
-
+                eraseFDByIndex(i);
+                continue;
             }
 
             if (handleClientConnection(pfd)) {
