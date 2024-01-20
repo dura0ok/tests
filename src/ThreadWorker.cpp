@@ -25,15 +25,17 @@ void ThreadWorker::worker() {
     printf("worker is started\n");
     std::mutex mutex;
     while (true) {
-        int pollResult = poll(fds.data(), fds.size(), -1);
         mutex.lock();
-        std::cout << "Thread ID: " << std::this_thread::get_id() << ", Poll result: " <<  pollResult << " ";
+        std::cout << "Thread ID: " << std::this_thread::get_id() << ", Poll result: " <<  "asdasd || " << " ";
         for (auto &el: fds) {
             std::cout << el.fd << " " << el.events << " " << el.revents << " || ";
         }
 
         std::cout << std::endl;
         mutex.unlock();
+
+        int pollResult = poll(fds.data(), fds.size(), -1);
+
 
         if (pollResult == -1) {
             throw std::runtime_error("poll error");
@@ -143,7 +145,7 @@ bool ThreadWorker::handleClientInput(pollfd &pfd) {
     cacheElement->incrementReadersCount();
     printf("Increment readers %s\n", __func__ );
     if (res) {
-            cacheElement->initReader(info);
+        cacheElement->initReader(info);
 
         auto serverFD = HostConnector::connectToTargetHost(req);
 
@@ -229,6 +231,7 @@ bool ThreadWorker::cleanClientInfo(CacheElement *cacheElement, ClientInfo *info,
 bool ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
     //printf("SERVER DOWNLOAD\n");
     auto uri = serverSocketsURI.at(pfd.fd);
+    std::cerr << "URI " << uri << std::endl;
     auto *cacheElement = storage.getElement(uri);
 
     if (storage.clearElementForServer(uri)){

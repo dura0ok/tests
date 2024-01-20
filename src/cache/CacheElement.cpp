@@ -23,7 +23,7 @@ void CacheElement::markFinished() {
 
 bool CacheElement::initReader(ClientInfo *info) {
     pthread_rwlock_rdlock(&mData);
-    if(!finished){
+    if(finished){
         pthread_rwlock_unlock(&mData);
         return false;
     }
@@ -50,6 +50,7 @@ void CacheElement::appendData(const char *buf, size_t size) {
 }
 
 void CacheElement::makeReadersReadyToWrite() {
+    printf("%s\n", __func__ );
     pthread_mutex_lock(&mUserBufStates);
     for (auto &userBufState: userBufStates) {
         pool->AddClientInfoToWorker(userBufState.second);
