@@ -23,17 +23,17 @@ ThreadWorker::ThreadWorker(Storage &newStorage) : storage(newStorage) {
 
 void ThreadWorker::worker() {
     printf("worker is started\n");
-    std::mutex mutex; // Declare a mutex
+    std::mutex mutex;
     while (true) {
         int pollResult = poll(fds.data(), fds.size(), -1);
-//        mutex.lock();
-//        std::cout << "Thread ID: " << std::this_thread::get_id() << ", Poll result: " <<  pollResult << " ";
-//        for (auto &el: fds) {
-//            std::cout << el.fd << " " << el.events << " " << el.revents << " || ";
-//        }
-//
-//        std::cout << std::endl;
-//        mutex.unlock();
+        mutex.lock();
+        std::cout << "Thread ID: " << std::this_thread::get_id() << ", Poll result: " <<  pollResult << " ";
+        for (auto &el: fds) {
+            std::cout << el.fd << " " << el.events << " " << el.revents << " || ";
+        }
+
+        std::cout << std::endl;
+        mutex.unlock();
 
         if (pollResult == -1) {
             throw std::runtime_error("poll error");
@@ -43,14 +43,14 @@ void ThreadWorker::worker() {
 
         for (ssize_t i = 2; i < static_cast<ssize_t>(fds.size()); i++) {
             auto &pfd = fds[i];
-            if ((pfd.revents & POLLIN) == POLLIN && serverSocketsURI.count(pfd.fd) && handleReadDataFromServer(pfd)) {
+            if(serverSocketsURI.count(pfd.fd)) {
+                if ((pfd.revents & POLLIN) == POLLIN && handleReadDataFromServer(pfd)) {
+                    eraseFDByIndex(i);
+                }
+            }else if(handleClientConnection(pfd)){
                 eraseFDByIndex(i);
-                continue;
             }
 
-            if (handleClientConnection(pfd)) {
-                eraseFDByIndex(i);
-            }
             pfd.revents = 0;
         }
     }
@@ -185,10 +185,8 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     auto size = cacheElement->readData(buf, BUFSIZ, info->offset);
 
     if (size == 0) {
-        cleanClientInfo(cacheElement, info, cacheElement->isFinishReading(info->offset));
-        return true;
+        return cleanClientInfo(cacheElement, info, cacheElement->isFinishReading(info->offset));
     }
-
 
     //std::cout << "Data read from client " << pfd.fd << std::endl;
     ssize_t bytesSend = send(pfd.fd, buf, size, 0);
@@ -200,8 +198,7 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
         }
 
 
-        cleanClientInfo(cacheElement, info,  true);
-        return true;
+        return cleanClientInfo(cacheElement, info,  true);
     }
 
     info->offset += static_cast<ssize_t>(bytesSend);
@@ -209,10 +206,9 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     return false;
 }
 
-void ThreadWorker::cleanClientInfo(CacheElement *cacheElement, ClientInfo *info, bool closeFD) {
-    clientInfo.erase(info->fd);
-
+bool ThreadWorker::cleanClientInfo(CacheElement *cacheElement, ClientInfo *info, bool closeFD) {
     if (closeFD) {
+        clientInfo.erase(info->fd);
         printf("Decrement readers %s\n", __func__ );
         cacheElement->decrementReadersCount();
         close(info->fd);
@@ -220,9 +216,13 @@ void ThreadWorker::cleanClientInfo(CacheElement *cacheElement, ClientInfo *info,
 
         fprintf(stderr, "CLOSING %d %s\n", info->fd, __func__);
         delete info;
-
+        return true;
     } else {
-        cacheElement->initReader(info);
+       if(cacheElement->initReader(info)){
+           clientInfo.erase(info->fd);
+           return true;
+       }
+        return false;
     }
 }
 

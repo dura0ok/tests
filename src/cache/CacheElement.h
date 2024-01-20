@@ -26,7 +26,7 @@ public:
 
     void markFinished();
 
-    void initReader(ClientInfo *info);
+    bool initReader(ClientInfo *info);
 
 
     size_t readData(char *buf, size_t buf_size, ssize_t offset);

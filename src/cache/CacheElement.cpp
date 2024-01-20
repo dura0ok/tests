@@ -21,15 +21,23 @@ void CacheElement::markFinished() {
 }
 
 
-void CacheElement::initReader(ClientInfo *info) {
+bool CacheElement::initReader(ClientInfo *info) {
+    pthread_rwlock_rdlock(&mData);
+    if(!finished){
+        pthread_rwlock_unlock(&mData);
+        return false;
+    }
+
     pthread_mutex_lock(&mUserBufStates);
     userBufStates.insert(std::make_pair(info->fd, info));
     pthread_mutex_unlock(&mUserBufStates);
+    pthread_rwlock_unlock(&mData);
+    return true;
 }
 
 size_t CacheElement::readData(char *buf, size_t buf_size, ssize_t offset) {
-    auto copySize = (data.size() >= (buf_size + offset)) ? buf_size : (data.size() - offset);
     pthread_rwlock_rdlock(&mData);
+    auto copySize = (data.size() >= (buf_size + offset)) ? buf_size : (data.size() - offset);
     std::memcpy(buf, data.data() + offset, copySize);
     pthread_rwlock_unlock(&mData);
     return copySize;
