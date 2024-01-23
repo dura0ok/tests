@@ -23,16 +23,15 @@ ThreadWorker::ThreadWorker(Storage &newStorage) : storage(newStorage) {
 
 void ThreadWorker::worker() {
     printf("worker is started\n");
-    std::mutex mutex;
     while (true) {
-        mutex.lock();
+
         std::cout << "Thread ID: " << std::this_thread::get_id() << ", Poll result: " <<  "asdasd || " << " ";
         for (auto &el: fds) {
             std::cout << el.fd << " " << el.events << " " << el.revents << " || ";
         }
 
         std::cout << std::endl;
-        mutex.unlock();
+
 
         int pollResult = poll(fds.data(), fds.size(), -1);
 
@@ -167,8 +166,7 @@ bool ThreadWorker::handleClientInput(pollfd &pfd) {
 }
 
 bool ThreadWorker::readClientInput(int fd) {
-    char buf[CHUNK_SIZE];
-    ssize_t bytesRead = recv(fd, buf, CHUNK_SIZE, 0);
+    ssize_t bytesRead = recv(fd, sendBuf, CHUNK_SIZE, 0);
     if (bytesRead < 0) {
         clientBuffersMap.erase(fd);
         close(fd);
@@ -177,7 +175,7 @@ bool ThreadWorker::readClientInput(int fd) {
 
     auto &clientBuf = clientBuffersMap[fd];
 
-    clientBuf += std::string(buf, bytesRead);
+    clientBuf += std::string(sendBuf, bytesRead);
     return false;
 }
 
@@ -187,7 +185,7 @@ bool ThreadWorker::handleClientReceivingResource(pollfd &pfd) {
     auto *cacheElement = storage.getElement(info->uri);
 
     do{
-        auto size = static_cast<ssize_t>(cacheElement->readData(sendBuf, BUFSIZ, info->offset));
+        auto size = static_cast<ssize_t>(cacheElement->readData(sendBuf, CHUNK_SIZE, info->offset));
 
         if (size == 0) {
             return cleanClientInfo(cacheElement, info, cacheElement->isFinishReading(info->offset));
@@ -250,12 +248,16 @@ bool ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
     for(size_t i = 0; i < 5; i++){
         ssize_t bytesRead = recv(pfd.fd, sendBuf, CHUNK_SIZE, 0);
         if (bytesRead < 0) {
+
             if(errno != EAGAIN){
                 fprintf(stderr, "ERROR < 0 %s\n", strerror(errno));
                 cacheElement->markFinished();
+                cacheElement->makeReadersReadyToWrite();
                 close(pfd.fd);
+                serverSocketsURI.erase(pfd.fd);
                 return true;
             }else{
+                cacheElement->makeReadersReadyToWrite();
                 return false;
             }
 
@@ -268,6 +270,7 @@ bool ThreadWorker::handleReadDataFromServer(pollfd &pfd) {
             serverSocketsURI.erase(pfd.fd);
             fprintf(stderr, "CLOSING %d %s\n", pfd.fd, __func__);
             close(pfd.fd);
+            cacheElement->makeReadersReadyToWrite();
             return true;
         }
         printf("BYTES READ %zu\n", bytesRead);
